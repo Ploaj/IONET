@@ -24,6 +24,30 @@ namespace IONET.Collada
     {
         private IONET.Collada.Collada _collada;
 
+        private HashSet<string> _usedIDs = new HashSet<string>();
+
+        /// <summary>
+        /// Gets a unique ID for given string
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public string GetUniqueID(string id)
+        {
+            if (!_usedIDs.Contains(id))
+            {
+                _usedIDs.Add(id);
+                return id;
+            }
+            else
+            {
+                int index = 0;
+                while (_usedIDs.Contains(id + "_" + index))
+                    index++;
+                _usedIDs.Add(id + "_" + index);
+                return id + "_" + index;
+            }
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -111,12 +135,12 @@ namespace IONET.Collada
         /// <param name="color"></param>
         /// <param name="tex"></param>
         /// <returns></returns>
-        private FX_Common_Color_Or_Texture_Type GenerateTextureInfo(Vector4 color, IOTexture tex)
+        private FX_Common_Color_Or_Texture_Type GenerateTextureInfo(string sid, Vector4 color, IOTexture tex)
         {
             return new FX_Common_Color_Or_Texture_Type()
             {
                 Color = new IONET.Collada.Core.Lighting.Color()
-                { sID = "emission", Value_As_String = $"{color.X} {color.Y} {color.Z} {color.W}" },
+                { sID = sid, Value_As_String = $"{color.X} {color.Y} {color.Z} {color.W}" },
 
                 Texture = tex == null ? 
                     null : 
@@ -140,17 +164,17 @@ namespace IONET.Collada
                 Shininess = new FX_Common_Float_Or_Param_Type { Float = new IONET.Collada.Types.SID_Float() { sID = "shininess", Value = mat.Shininess } },
                 Transparency = new FX_Common_Float_Or_Param_Type() { Float = new IONET.Collada.Types.SID_Float() { sID = "transparency", Value = mat.Alpha } },
                 Reflectivity = new FX_Common_Float_Or_Param_Type() { Float = new IONET.Collada.Types.SID_Float() { sID = "reflectivity", Value = mat.Reflectivity } },
-                Ambient = GenerateTextureInfo(mat.AmbientColor, mat.AmbientMap),
-                Diffuse = GenerateTextureInfo(mat.DiffuseColor, mat.DiffuseMap),
-                Specular = GenerateTextureInfo(mat.SpecularColor, mat.SpecularMap),
-                Emission = GenerateTextureInfo(mat.EmissionColor, mat.EmissionMap),
-                Reflective = GenerateTextureInfo(mat.ReflectiveColor, mat.ReflectiveMap),
+                Ambient = GenerateTextureInfo("ambient", mat.AmbientColor, mat.AmbientMap),
+                Diffuse = GenerateTextureInfo("diffuse", mat.DiffuseColor, mat.DiffuseMap),
+                Specular = GenerateTextureInfo("specular", mat.SpecularColor, mat.SpecularMap),
+                Emission = GenerateTextureInfo("emission", mat.EmissionColor, mat.EmissionMap),
+                Reflective = GenerateTextureInfo("reflective", mat.ReflectiveColor, mat.ReflectiveMap),
             };
 
             // create effect
             Effect effect = new Effect()
             {
-                ID = mat.Name + "-effect",
+                ID = GetUniqueID(mat.Name + "-effect"),
                 Name = mat.Name,
                 Profile_COMMON = new IONET.Collada.FX.Profiles.COMMON.Profile_COMMON[]
                 {
@@ -168,7 +192,7 @@ namespace IONET.Collada
             // create material
             Material material = new Material()
             {
-                ID = mat.Name,
+                ID = GetUniqueID(mat.Name),
                 Name = mat.Name,
                 Instance_Effect = new IONET.Collada.FX.Effects.Instance_Effect()
                 {
@@ -213,7 +237,7 @@ namespace IONET.Collada
             // create image node
             Image img = new Image()
             {
-                ID = name + "-image",
+                ID = GetUniqueID(name + "-image"),
                 Name = name,
                 Init_From = new Init_From()
                 {
@@ -330,7 +354,7 @@ namespace IONET.Collada
         {
             Controller con = new Controller()
             {
-                ID = mesh.Name + "-controller",
+                ID = GetUniqueID(mesh.Name + "-controller"),
                 Name = mesh.Name
             };
 
@@ -375,15 +399,23 @@ namespace IONET.Collada
                 }
             }
 
+            var mid = GetUniqueID(mesh.Name + "-matrices");
+            var jid = GetUniqueID(mesh.Name + "-joints");
+            var wid = GetUniqueID(mesh.Name + "-weights");
+
+            var midarr = GetUniqueID(mesh.Name + "-matrices-array");
+            var jidarr = GetUniqueID(mesh.Name + "-joints-array");
+            var widarr = GetUniqueID(mesh.Name + "-weights-array");
+
             con.Skin.Source = new Source[]
             {
                 new Source()
                 {
-                    ID = mesh.Name + "-joints",
+                    ID = jid,
                     Name_Array = new Name_Array()
                     {
                         Count = boneNames.Count,
-                        ID = mesh.Name + "-joints-array",
+                        ID = jidarr,
                         Value_Pre_Parse = string.Join(" ", boneNames)
                     },
                     Technique_Common = new IONET.Collada.Core.Technique_Common.Technique_Common_Source()
@@ -391,7 +423,7 @@ namespace IONET.Collada
                         Accessor = new Accessor()
                         {
                             Count = (uint)boneNames.Count,
-                            Source =  "#" + mesh.Name + "-joints-array",
+                            Source =  "#" + jidarr,
                             Param = new IONET.Collada.Core.Parameters.Param[]
                             {
                                 new IONET.Collada.Core.Parameters.Param()
@@ -405,11 +437,11 @@ namespace IONET.Collada
                 },
                 new Source()
                 {
-                    ID = mesh.Name + "-matrices",
+                    ID = mid,
                     Float_Array = new Float_Array()
                     {
                         Count = boneBinds.Count,
-                        ID = mesh.Name + "-matrices-array",
+                        ID = midarr,
                         Value_As_String = string.Join(" ", boneBinds)
                     },
                     Technique_Common = new IONET.Collada.Core.Technique_Common.Technique_Common_Source()
@@ -417,7 +449,7 @@ namespace IONET.Collada
                         Accessor = new Accessor()
                         {
                             Count = (uint)boneBinds.Count / 16,
-                            Source =  "#" + mesh.Name + "-matrices-array",
+                            Source =  "#" + midarr,
                             Param = new IONET.Collada.Core.Parameters.Param[]
                             {
                                 new IONET.Collada.Core.Parameters.Param()
@@ -431,11 +463,11 @@ namespace IONET.Collada
                 },
                 new Source()
                 {
-                    ID = mesh.Name + "-weights",
+                    ID = wid,
                     Float_Array = new Float_Array()
                     {
                         Count = weights.Count,
-                        ID = mesh.Name + "-weights-array",
+                        ID = widarr,
                         Value_As_String = string.Join(" ", weights)
                     },
                     Technique_Common = new IONET.Collada.Core.Technique_Common.Technique_Common_Source()
@@ -443,7 +475,7 @@ namespace IONET.Collada
                         Accessor = new Accessor()
                         {
                             Count = (uint)weights.Count,
-                            Source =  "#" + mesh.Name + "-weights-array",
+                            Source =  "#" + widarr,
                             Param = new IONET.Collada.Core.Parameters.Param[]
                             {
                                 new IONET.Collada.Core.Parameters.Param()
@@ -464,12 +496,12 @@ namespace IONET.Collada
                     new Input_Unshared()
                     {
                         Semantic = Input_Semantic.JOINT,
-                        source = "#" + mesh.Name + "-joints"
+                        source = "#" + jid
                     },
                     new Input_Unshared()
                     {
                         Semantic = Input_Semantic.INV_BIND_MATRIX,
-                        source = "#" + mesh.Name + "-matrices"
+                        source = "#" + mid
                     },
                 }
             };
@@ -490,13 +522,13 @@ namespace IONET.Collada
                     new Input_Shared()
                     {
                         Semantic = Input_Semantic.JOINT,
-                        source = "#" + mesh.Name + "-joints",
+                        source = "#" + jid,
                         Offset = 0
                     },
                     new Input_Shared()
                     {
                         Semantic = Input_Semantic.WEIGHT,
-                        source = "#" + mesh.Name + "-weights",
+                        source = "#" + wid,
                         Offset = 1
                     },
                 }
@@ -527,7 +559,7 @@ namespace IONET.Collada
             mesh.MakeTriangles();
 
             // create a unique geometry id
-            var geomID = mesh.Name + "-geometry";
+            var geomID = GetUniqueID(mesh.Name + "-geometry");
 
             // create geometry element
             Geometry geom = new Geometry()
@@ -542,18 +574,18 @@ namespace IONET.Collada
             SourceGenerator srcgen = new SourceGenerator();
 
             srcgen.AddSourceData(
-                mesh.Name, Input_Semantic.POSITION,
+                geomID, Input_Semantic.POSITION,
                 mesh.Vertices.SelectMany(e => new float[] { e.Position.X, e.Position.Y, e.Position.Z }).ToArray());
 
             srcgen.AddSourceData(
-                mesh.Name, Input_Semantic.NORMAL,
+                geomID, Input_Semantic.NORMAL,
                 mesh.Vertices.SelectMany(e => new float[] { e.Normal.X, e.Normal.Y, e.Normal.Z }).ToArray());
 
             for (int i = 0; i < 7; i++)
                 if (mesh.HasUVSet(i))
                 {
                     srcgen.AddSourceData(
-                        mesh.Name, Input_Semantic.TEXCOORD,
+                        geomID, Input_Semantic.TEXCOORD,
                         mesh.Vertices.SelectMany(e => new float[] { e.UVs[i].X, e.UVs[i].Y }).ToArray(),
                         i);
                 }
@@ -562,7 +594,7 @@ namespace IONET.Collada
                 if (mesh.HasColorSet(i))
                 {
                     srcgen.AddSourceData(
-                        mesh.Name, Input_Semantic.COLOR,
+                        geomID, Input_Semantic.COLOR,
                         mesh.Vertices.SelectMany(e => new float[] { e.Colors[i].X, e.Colors[i].Y, e.Colors[i].Z, e.Colors[i].W }).ToArray(),
                         i);
                 }
@@ -570,7 +602,7 @@ namespace IONET.Collada
             // fill in vertex info
             geom.Mesh.Vertices = new Vertices()
             {
-                ID = mesh.Name + "-vertices",
+                ID = GetUniqueID(mesh.Name + "-vertices"),
                 Input = new Input_Unshared[]{
                     new Input_Unshared()
                     {

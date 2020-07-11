@@ -1,5 +1,7 @@
-﻿using System;
+﻿using IONET.Core.IOMath;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace IONET.Core.Model
@@ -140,6 +142,38 @@ namespace IONET.Core.Model
 
             Vertices = newVertices;
         }
-        
+
+
+        /// <summary>
+        /// Generates Tangents and Bitangents for the vertices
+        /// </summary>
+        public void GenerateTangentsAndBitangents()
+        {
+            List<int> indices = new List<int>();
+
+            foreach(var v in Polygons)
+            {
+                v.ToTriangles(this);
+
+                if (v.PrimitiveType != IOPrimitive.TRIANGLE)
+                    continue;
+
+                indices.AddRange(v.Indicies);
+            }
+
+            var positions = Vertices.Select(e => e.Position).ToList();
+            var normals = Vertices.Select(e => e.Normal).ToList();
+            var uvs = HasUVSet(0) ? Vertices.Select(e => e.UVs[0]).ToList(): Vertices.Select(e => Vector2.Zero).ToList();
+
+            TriangleListUtils.CalculateTangentsBitangents(positions, normals, uvs, indices, out Vector3[] tangents, out Vector3[] bitangents);
+
+            for (int i = 0; i < Vertices.Count; i++)
+            {
+                var vertex = Vertices[i];
+                vertex.Tangent = tangents[i];
+                vertex.Binormal = bitangents[i];
+                Vertices[i] = vertex;
+            }
+        }
     }
 }

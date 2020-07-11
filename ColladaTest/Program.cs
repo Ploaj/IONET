@@ -7,7 +7,7 @@ namespace ColladaTest
     {
         static void Main(string[] args)
         {
-            var scene = IOManager.LoadScene("Test.dae", new ImportSettings()
+            var scene = IOManager.LoadScene(@"Test.dae", new ImportSettings()
             {
 
             });

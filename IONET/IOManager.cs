@@ -94,10 +94,16 @@ namespace IONET
 
                     // apply post processing
                     foreach (var model in scene.Models)
+                    {
+                        // smooth normals
+                        if (settings.SmoothNormals)
+                            model.SmoothNormals();
+
+                        // post process mesh
                         foreach (var m in model.Meshes)
                         {
                             // optimize vertices
-                            if(settings.Optimize)
+                            if (settings.Optimize)
                                 m.Optimize();
 
                             // make triangles
@@ -121,13 +127,13 @@ namespace IONET
                             // flip winding order
                             if (settings.FlipWindingOrder)
                             {
-                                foreach(var p in m.Polygons)
+                                foreach (var p in m.Polygons)
                                 {
                                     p.ToTriangles(m);
 
-                                    if(p.PrimitiveType == Core.Model.IOPrimitive.TRIANGLE)
+                                    if (p.PrimitiveType == Core.Model.IOPrimitive.TRIANGLE)
                                     {
-                                        for(int i = 0; i < p.Indicies.Count; i += 3)
+                                        for (int i = 0; i < p.Indicies.Count; i += 3)
                                         {
                                             var temp = p.Indicies[i + 1];
                                             p.Indicies[i + 1] = p.Indicies[i + 2];
@@ -137,14 +143,15 @@ namespace IONET
                                 }
                             }
 
-                            // smooth normals
-                            if (settings.SmoothNormals)
-                                model.SmoothNormals();
+                            // generate tangents and bitangants/binormals
+                            if (settings.GenerateTangentsAndBinormals)
+                                m.GenerateTangentsAndBitangents();
 
                             // reset envelopes
                             foreach (var v in m.Vertices)
                                 v.ResetEnvelope(model.Skeleton);
                         }
+                    }
 
                     return scene;
                 }

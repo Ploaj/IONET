@@ -180,7 +180,7 @@ namespace IONET.Collada
             id = ColladaHelper.SanitizeID(id);
 
             // find geometry by id
-            var con = _collada.Library_Controllers.Controller.First(e => e.ID == id);
+            var con = _collada.Library_Controllers.Controller.FirstOrDefault(e => e.ID == id);
 
             // not found
             if (con == null)
@@ -430,14 +430,14 @@ namespace IONET.Collada
             if (effectURL == null)
                 return null;
 
-            var effect = _collada.Library_Effects.Effect.First(e=>e.ID == ColladaHelper.SanitizeID(effectURL));
+            var effect = _collada.Library_Effects.Effect.ToList().Find(e=>e.ID == ColladaHelper.SanitizeID(effectURL));
 
             IOMaterial material = new IOMaterial()
             {
                 Name = mat.Name
             };
             
-            if(effect.Profile_COMMON != null && effect.Profile_COMMON.Length > 0)
+            if(effect != null && effect.Profile_COMMON != null && effect.Profile_COMMON.Length > 0)
             {
                 var prof = effect.Profile_COMMON[0];
 
