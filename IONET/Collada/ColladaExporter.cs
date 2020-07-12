@@ -105,6 +105,9 @@ namespace IONET.Collada
 
             // save to file
             _collada.SaveToFile(filePath);
+
+            // cleanup
+            _usedIDs.Clear();
             _collada = null;
         }
 
@@ -194,9 +197,9 @@ namespace IONET.Collada
             {
                 ID = GetUniqueID(mat.Name),
                 Name = mat.Name,
-                Instance_Effect = new IONET.Collada.FX.Effects.Instance_Effect()
+                Instance_Effect = new Instance_Effect()
                 {
-                    URL = "#" + effect.Name
+                    URL = "#" + effect.ID
                 }
             };
 
@@ -321,6 +324,8 @@ namespace IONET.Collada
                 Type = Node_Type.NODE
             };
 
+            var materials = mesh.Polygons.Select(e => e.MaterialName).Distinct();
+
             if (mesh.HasEnvelopes())
             {
                 var geom = new Instance_Controller();
@@ -328,8 +333,17 @@ namespace IONET.Collada
                 geom.URL = "#" + GenerateGeometryController(mesh, model.Skeleton);
 
                 n.Instance_Controller = new Instance_Controller[] { geom };
-
-                //n.Instance_Controller[0].Bind_Material = new IONET.Collada.FX.Materials.Bind_Material[] { new IONET.Collada.FX.Materials.Bind_Material() };
+                
+                n.Instance_Controller[0].Bind_Material = new IONET.Collada.FX.Materials.Bind_Material[]
+                {
+                    new Bind_Material()
+                    {
+                        Technique_Common = new FX.Technique_Common.Technique_Common_Bind_Material()
+                        {
+                            Instance_Material = materials.Select(e => new Instance_Material_Geometry() { Symbol = e, Target = "#" + e }).ToArray()
+                        }
+                    }
+                };
             }
             else
             {
@@ -339,7 +353,16 @@ namespace IONET.Collada
 
                 n.Instance_Geometry = new Instance_Geometry[] { geom };
 
-                //n.Instance_Geometry[0].Bind_Material = new IONET.Collada.FX.Materials.Bind_Material[] { new IONET.Collada.FX.Materials.Bind_Material() };
+                n.Instance_Controller[0].Bind_Material = new IONET.Collada.FX.Materials.Bind_Material[]
+                {
+                    new Bind_Material()
+                    {
+                        Technique_Common = new FX.Technique_Common.Technique_Common_Bind_Material()
+                        {
+                            Instance_Material = materials.Select(e => new Instance_Material_Geometry() { Symbol = e, Target = "#" + e }).ToArray()
+                        }
+                    }
+                };
             }
 
             return n;

@@ -55,5 +55,28 @@ namespace IONET
 
     public class ExportSettings
     {
+        /// <summary>
+        /// Recalculates smooth normals for the mesh
+        /// </summary>
+        [Category("Vertices"), DisplayName("Smooth Normals"), Description("Recalcuates smooth normals")]
+        public bool SmoothNormals { get; set; } = false;
+
+        /// <summary>
+        /// Flips the face winding order, when enabled the mesh is automatically triangulated
+        /// </summary>
+        [Category("Vertices"), DisplayName("Flip Winding Order"), Description("Flips the direction of the faces. Useful if the model looks inverted")]
+        public bool FlipWindingOrder { get; set; } = false;
+
+        /// <summary>
+        /// Flips the Y UV Coordinate. Useful if textures appear upside down
+        /// </summary>
+        [Category("Vertices"), DisplayName("Flip UVs"), Description("Flips UV coordinates on the Y Axis. Useful if textures appear upside down.")]
+        public bool FlipUVs { get; set; } = false;
+
+        /// <summary>
+        /// Optimizes number of vertices, very recommended
+        /// </summary>
+        [Category("Vertices"), DisplayName("Optimize"), Description("Reduces number of vertices by combining duplicates")]
+        public bool Optimize { get; set; } = true;
     }
 }

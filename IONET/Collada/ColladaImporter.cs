@@ -312,6 +312,7 @@ namespace IONET.Collada
                     for(int i = 0; i < tri.Count * 3; i++)
                     {
                         IOVertex vertex = new IOVertex();
+
                         for(int j = 0; j < tri.Input.Length; j++)
                         {
                             var input = tri.Input[j];
@@ -320,8 +321,9 @@ namespace IONET.Collada
 
                             ProcessInput(input.Semantic, input.source, input.Set, vertex, geom.Mesh.Vertices, index, srcs, vertexEnvelopes);
                         }
+
+                        poly.Indicies.Add(mesh.Vertices.Count);
                         mesh.Vertices.Add(vertex);
-                        poly.Indicies.Add(i);
                     }
 
                     mesh.Polygons.Add(poly);

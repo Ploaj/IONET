@@ -164,14 +164,66 @@ namespace IONET
         /// </summary>
         /// <param name="scene"></param>
         /// <param name="filePath"></param>
-        public static void ExportScene(IOScene scene, string filePath)
+        public static void ExportScene(IOScene scene, string filePath, ExportSettings settings = null)
         {
             var ext = Path.GetExtension(filePath).ToLower();
+
+            if (settings == null)
+                settings = new ExportSettings();
 
             foreach (var l in ModelExporters)
                 foreach (var e in l.GetExtensions())
                     if (e.Equals(ext))
                     {
+                        // apply post processing
+                        foreach (var model in scene.Models)
+                        {
+                            // smooth normals
+                            if (settings.SmoothNormals)
+                                model.SmoothNormals();
+
+                            // post process mesh
+                            foreach (var m in model.Meshes)
+                            {
+                                // optimize vertices
+                                if (settings.Optimize)
+                                    m.Optimize();
+
+                                // vertex modifications
+                                if (settings.FlipUVs)
+                                    foreach (var v in m.Vertices)
+                                    {
+                                        // flip uvs
+                                        if (settings.FlipUVs)
+                                            for (int i = 0; i < v.UVs.Count; i++)
+                                                v.UVs[i] = new System.Numerics.Vector2(v.UVs[i].X, 1 - v.UVs[i].Y);
+                                    }
+
+                                // flip winding order
+                                if (settings.FlipWindingOrder)
+                                {
+                                    foreach (var p in m.Polygons)
+                                    {
+                                        p.ToTriangles(m);
+
+                                        if (p.PrimitiveType == Core.Model.IOPrimitive.TRIANGLE)
+                                        {
+                                            for (int i = 0; i < p.Indicies.Count; i += 3)
+                                            {
+                                                var temp = p.Indicies[i + 1];
+                                                p.Indicies[i + 1] = p.Indicies[i + 2];
+                                                p.Indicies[i + 2] = temp;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // reset envelopes
+                                foreach (var v in m.Vertices)
+                                    v.ResetEnvelope(model.Skeleton);
+                            }
+                        }
+
                         l.ExportScene(scene, filePath);
                         break;
                     }
