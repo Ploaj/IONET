@@ -304,7 +304,7 @@ namespace IONET.Fbx
                         if(mod.Name == "Model")
                             name = GetNameWithoutNamespace(mod.Properties[NodeDescSize - 2].ToString());
 
-                    if (!string.IsNullOrEmpty(name))
+                    if (!string.IsNullOrEmpty(name) && sub["Indexes"] != null)
                     {
                         // create deform map
                         Dictionary<int, Tuple<float, string>> deformmap = new Dictionary<int, Tuple<float, string>>();

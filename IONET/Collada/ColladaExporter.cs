@@ -66,6 +66,8 @@ namespace IONET.Collada
         {
             // create collada document
             _collada = new IONET.Collada.Collada();
+
+            _collada.Version = "1.4.1";
             
 
             // export materials
@@ -185,7 +187,7 @@ namespace IONET.Collada
                     {
                         Technique = new IONET.Collada.FX.Profiles.COMMON.Effect_Technique_COMMON()
                         {
-                            id = "standard",
+                            sID = "standard",
                             Phong = phong
                         }
                     }
