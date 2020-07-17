@@ -12,6 +12,8 @@ using IONET.Collada.Core.Geometry;
 using IONET.Collada.Enums;
 using IONET.Collada.FX.Materials;
 using IONET.Collada.FX.Rendering;
+using IONET.Collada.FX.Profiles.COMMON;
+using System.Xml;
 
 namespace IONET.Collada
 {
@@ -65,21 +67,20 @@ namespace IONET.Collada
                     Name = colscene.Name
                 };
 
+                // scan skeletons
+                List<string> skelIDs = new List<string>();
+                foreach (var v in colscene.Node)
+                {
+                    if (GetSkeletonReferences(v, out List<string> joints))
+                        foreach (var j in joints)
+                            if (!skelIDs.Contains(j))
+                                skelIDs.Add(j);
+                }
+
                 // load nodes
                 foreach (var v in colscene.Node)
                 {
-                    var node = LoadNodes(v, null, model);
-
-                    // detect skeleton
-                    if (v.Type == Node_Type.JOINT ||
-                        (v.Instance_Camera == null &&
-                        v.Instance_Controller == null &&
-                        v.Instance_Geometry == null &&
-                        v.Instance_Light == null &&
-                        v.Instance_Node == null))
-                    {
-                        model.Skeleton.RootBones.Add(node);
-                    }
+                    LoadNodes(v, null, model, skelIDs);
                 }
 
                 // add model
@@ -114,13 +115,29 @@ namespace IONET.Collada
             return Path.GetExtension(filePath).ToLower().Equals(".dae");
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        private bool GetSkeletonReferences(Node n, out List<string> jointIDs)
+        {
+            jointIDs = new List<string>();
+
+            if(n.Instance_Controller != null)
+               foreach(var c in n.Instance_Controller)
+                    if(c.Skeleton != null)
+                        foreach(var s in c.Skeleton)
+                            jointIDs.Add(s.Value.Substring(1, s.Value.Length - 1));
+
+            return jointIDs.Count > 0;
+        }
         
         /// <summary>
         /// 
         /// </summary>
         /// <param name="n"></param>
         /// <param name="bones"></param>
-        private IOBone LoadNodes(Node n, IOBone parent, IOModel model)
+        private IOBone LoadNodes(Node n, IOBone parent, IOModel model, List<string> skeletonIds)
         {
             // create bone to represent node
             IOBone bone = new IOBone()
@@ -131,6 +148,55 @@ namespace IONET.Collada
             // load matrix
             if (n.Matrix != null && n.Matrix.Length >= 0)
                 bone.LocalTransform = n.Matrix[0].ToMatrix();
+            else
+            {
+                // or segmented transform
+                Vector3 scale = Vector3.One;
+                Vector3 position = Vector3.Zero;
+                Vector4 rx = Vector4.UnitX;
+                Vector4 ry = Vector4.UnitY;
+                Vector4 rz = Vector4.UnitZ;
+
+                if (n.Scale != null && n.Scale.Length > 0)
+                {
+                    var val = n.Scale[0].GetValues();
+                    scale = new Vector3(val[0], val[1], val[2]);
+                }
+
+                if (n.Translate != null && n.Translate.Length > 0)
+                {
+                    var val = n.Translate[0].GetValues();
+                    position = new Vector3(val[0], val[1], val[2]);
+                }
+
+                if (n.Rotate != null && n.Rotate.Length > 0)
+                {
+                    foreach(var r in n.Rotate)
+                    {
+                        var val = r.GetValues();
+                        switch (r.sID)
+                        {
+                            case "rotationX":
+                                rx = new Vector4(val[0], val[1], val[2], val[3]);
+                                break;
+                            case "rotationY":
+                                ry = new Vector4(val[0], val[1], val[2], val[3]);
+                                break;
+                            case "rotationZ":
+                                rz = new Vector4(val[0], val[1], val[2], val[3]);
+                                break;
+                        }
+                    }
+                }
+
+                // create transform
+                bone.LocalTransform = Matrix4x4.CreateTranslation(position) *
+                    Matrix4x4.CreateFromAxisAngle(new Vector3(rz.X, rz.Y, rz.Z), rz.W) *
+                    Matrix4x4.CreateFromAxisAngle(new Vector3(ry.X, ry.Y, ry.Z), ry.W) *
+                    Matrix4x4.CreateFromAxisAngle(new Vector3(rx.X, rx.Y, rx.Z), rx.W) *
+                    Matrix4x4.CreateScale(scale);
+            }
+
 
             // add this node to parent
             if (parent != null)
@@ -139,7 +205,7 @@ namespace IONET.Collada
             // load children
             if (n.node != null)
                 foreach (var v in n.node)
-                    LoadNodes(v, bone, model);
+                    LoadNodes(v, bone, model, skeletonIds);
 
 
             // load instanced geometry
@@ -162,6 +228,13 @@ namespace IONET.Collada
                     geom.TransformVertices(bone.WorldTransform);
                     model.Meshes.Add(geom);
                 }
+            }
+
+            // detect skeleton
+            if ((!string.IsNullOrEmpty(n.ID) && skeletonIds.Contains(n.ID)) ||
+                (n.Type == Node_Type.JOINT && parent == null))
+            {
+                model.Skeleton.RootBones.Add(bone);
             }
 
             // complete
@@ -457,7 +530,7 @@ namespace IONET.Collada
 
                     if (phong.Diffuse != null)
                     {
-                        if (ReadEffectColorType(phong.Diffuse, out Vector4 color, out IOTexture texture))
+                        if (ReadEffectColorType(prof, phong.Diffuse, out Vector4 color, out IOTexture texture))
                             material.DiffuseColor = color;
 
                         if (texture != null)
@@ -466,7 +539,7 @@ namespace IONET.Collada
 
                     if (phong.Ambient != null)
                     {
-                        if(ReadEffectColorType(phong.Ambient, out Vector4 color, out IOTexture texture))
+                        if(ReadEffectColorType(prof, phong.Ambient, out Vector4 color, out IOTexture texture))
                             material.AmbientColor = color;
 
                         if (texture != null)
@@ -475,7 +548,7 @@ namespace IONET.Collada
 
                     if (phong.Specular != null)
                     {
-                        if (ReadEffectColorType(phong.Specular, out Vector4 color, out IOTexture texture))
+                        if (ReadEffectColorType(prof, phong.Specular, out Vector4 color, out IOTexture texture))
                             material.SpecularColor = color;
 
                         if (texture != null)
@@ -484,7 +557,7 @@ namespace IONET.Collada
 
                     if (phong.Reflective != null)
                     {
-                        if (ReadEffectColorType(phong.Reflective, out Vector4 color, out IOTexture texture))
+                        if (ReadEffectColorType(prof, phong.Reflective, out Vector4 color, out IOTexture texture))
                             material.ReflectiveColor = color;
 
                         if (texture != null)
@@ -500,7 +573,7 @@ namespace IONET.Collada
 
                     if (lambert.Diffuse != null)
                     {
-                        if (ReadEffectColorType(lambert.Diffuse, out Vector4 color, out IOTexture texture))
+                        if (ReadEffectColorType(prof, lambert.Diffuse, out Vector4 color, out IOTexture texture))
                             material.DiffuseColor = color;
 
                         if (texture != null)
@@ -509,7 +582,7 @@ namespace IONET.Collada
 
                     if (lambert.Ambient != null)
                     {
-                        if (ReadEffectColorType(lambert.Ambient, out Vector4 color, out IOTexture texture))
+                        if (ReadEffectColorType(prof, lambert.Ambient, out Vector4 color, out IOTexture texture))
                             material.AmbientColor = color;
 
                         if (texture != null)
@@ -518,7 +591,7 @@ namespace IONET.Collada
 
                     if (lambert.Reflective != null)
                     {
-                        if (ReadEffectColorType(lambert.Reflective, out Vector4 color, out IOTexture texture))
+                        if (ReadEffectColorType(prof, lambert.Reflective, out Vector4 color, out IOTexture texture))
                             material.ReflectiveColor = color;
 
                         if (texture != null)
@@ -537,7 +610,7 @@ namespace IONET.Collada
 
                     if (blinn.Diffuse != null)
                     {
-                        if (ReadEffectColorType(blinn.Diffuse, out Vector4 color, out IOTexture texture))
+                        if (ReadEffectColorType(prof, blinn.Diffuse, out Vector4 color, out IOTexture texture))
                             material.DiffuseColor = color;
 
                         if (texture != null)
@@ -546,7 +619,7 @@ namespace IONET.Collada
 
                     if (blinn.Ambient != null)
                     {
-                        if (ReadEffectColorType(blinn.Ambient, out Vector4 color, out IOTexture texture))
+                        if (ReadEffectColorType(prof, blinn.Ambient, out Vector4 color, out IOTexture texture))
                             material.AmbientColor = color;
 
                         if (texture != null)
@@ -555,7 +628,7 @@ namespace IONET.Collada
 
                     if (blinn.Specular != null)
                     {
-                        if (ReadEffectColorType(blinn.Specular, out Vector4 color, out IOTexture texture))
+                        if (ReadEffectColorType(prof, blinn.Specular, out Vector4 color, out IOTexture texture))
                             material.SpecularColor = color;
 
                         if (texture != null)
@@ -564,7 +637,7 @@ namespace IONET.Collada
 
                     if (blinn.Reflective != null)
                     {
-                        if (ReadEffectColorType(blinn.Reflective, out Vector4 color, out IOTexture texture))
+                        if (ReadEffectColorType(prof, blinn.Reflective, out Vector4 color, out IOTexture texture))
                             material.ReflectiveColor = color;
 
                         if (texture != null)
@@ -583,7 +656,7 @@ namespace IONET.Collada
         /// <param name="type"></param>
         /// <param name="color"></param>
         /// <param name="texture"></param>
-        private bool ReadEffectColorType(FX_Common_Color_Or_Texture_Type type, out Vector4 color, out IOTexture texture)
+        private bool ReadEffectColorType(Profile_COMMON prof, FX_Common_Color_Or_Texture_Type type, out Vector4 color, out IOTexture texture)
         {
             color = Vector4.One;
             texture = null;
@@ -599,8 +672,38 @@ namespace IONET.Collada
                 // create diffuse texture
                 texture = new IOTexture();
 
+                var texid = type.Texture.Textures;
+
+
+                // blender image lookup
+                if (prof.New_Param != null)
+                {
+                    var samp = prof.New_Param.FirstOrDefault(e => e.sID == type.Texture.Textures);
+                    if (samp != null && samp.Data != null)
+                    {
+                        var samp2d = samp.Data.FirstOrDefault(e => e.Name == "sampler2D");
+                        if (samp2d != null)
+                        {
+                            var src = FindChild(samp2d, "source");
+                            if (src != null)
+                            {
+                                var surf = prof.New_Param.FirstOrDefault(e => e.sID == src.InnerText);
+                                if (surf != null && surf.Data != null)
+                                {
+                                    var sur2d = surf.Data.FirstOrDefault(e => e.Name == "surface");
+                                    if (sur2d != null)
+                                    {
+                                        var init = FindChild(sur2d, "init_from");
+                                        texid = init.InnerText;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // lookup image from image library
-                var image = _collada.Library_Images.Image.FirstOrDefault(e => e.ID == type.Texture.Textures);
+                var image = _collada.Library_Images.Image.FirstOrDefault(e => e.ID == texid);
                 if (image != null)
                 {
                     texture.Name = image.Name;
@@ -609,6 +712,19 @@ namespace IONET.Collada
             }
 
             return (type.Color != null);
+        }
+
+
+        private static XmlNode FindChild(XmlNode node, string name)
+        {
+            foreach (XmlElement v in node.ChildNodes)
+            {
+                if (v.Name == name)
+                {
+                    return v;
+                }
+            }
+            return null;
         }
     }
 }

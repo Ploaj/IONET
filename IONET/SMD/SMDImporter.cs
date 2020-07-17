@@ -66,7 +66,8 @@ namespace IONET.SMD
                 while (!r.EndOfStream)
                 {
                     // read and clean line args
-                    var args = Regex.Replace(r.ReadLine().Trim(), @"\s+", " ").Split(' ');
+                    var line = r.ReadLine().Trim();
+                    var args = Regex.Replace(line, @"\s+", " ").Split(' ');
 
                     // check for grouping
                     switch (args[0])
@@ -82,11 +83,13 @@ namespace IONET.SMD
                     switch (mode)
                     {
                         case "nodes":
-                            if(args.Length == 3)
+                            if(args.Length >= 3)
                             {
-                                var index = int.Parse(args[0]);
-                                var name = args[1].Substring(1, args[1].Length - 2);
-                                var parentIndex = int.Parse(args[2]);
+                                args = line.Split('"');
+
+                                var index = int.Parse(args[0].Trim());
+                                var name = args[1];
+                                var parentIndex = int.Parse(args[2].Trim());
 
                                 IOBone bone = new IOBone()
                                 {
@@ -148,7 +151,7 @@ namespace IONET.SMD
                                         // create triangle polygon
                                         iomesh.Polygons.Add(new IOPolygon()
                                         {
-                                            MaterialName = meshName,
+                                            MaterialName = material,
                                             PrimitiveType = IOPrimitive.TRIANGLE
                                         });
 
@@ -223,15 +226,18 @@ namespace IONET.SMD
             }
 
             // parse weights
-            int links = int.Parse(args[9]);
-            
-            for(int i = 0; i < links; i++)
+            if(args.Length >= 10)
             {
-                vertex.Envelope.Weights.Add(new IOBoneWeight()
+                int links = int.Parse(args[9]);
+
+                for (int i = 0; i < links; i++)
                 {
-                    BoneName = idxToBones[int.Parse(args[10 + i * 2])].Name,
-                    Weight = float.Parse(args[11 + i * 2])
-                });
+                    vertex.Envelope.Weights.Add(new IOBoneWeight()
+                    {
+                        BoneName = idxToBones[int.Parse(args[10 + i * 2])].Name,
+                        Weight = float.Parse(args[11 + i * 2])
+                    });
+                }
             }
 
             return vertex;

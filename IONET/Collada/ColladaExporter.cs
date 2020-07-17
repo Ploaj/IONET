@@ -17,11 +17,13 @@ using IONET.Collada.FX.Materials;
 using IONET.Collada.FX.Effects;
 using IONET.Collada.FX.Texturing;
 using IONET.Collada.FX.Rendering;
+using IONET.Collada.Core.Parameters;
 
 namespace IONET.Collada
 {
     public class ColladaExporter : IModelExporter
     {
+        private ExportSettings _settings;
         private IONET.Collada.Collada _collada;
 
         private HashSet<string> _usedIDs = new HashSet<string>();
@@ -62,10 +64,11 @@ namespace IONET.Collada
         /// </summary>
         /// <param name="scene"></param>
         /// <param name="filePath"></param>
-        public void ExportScene(IOScene scene, string filePath)
+        public void ExportScene(IOScene scene, string filePath, ExportSettings settings)
         {
             // create collada document
             _collada = new IONET.Collada.Collada();
+            _settings = settings;
 
             _collada.Version = "1.4.1";
             
@@ -147,12 +150,12 @@ namespace IONET.Collada
                 Color = new IONET.Collada.Core.Lighting.Color()
                 { sID = sid, Value_As_String = $"{color.X} {color.Y} {color.Z} {color.W}" },
 
-                Texture = tex == null ? 
+                Texture = tex == null && _settings.ExportTextureInfo ? 
                     null : 
                     new IONET.Collada.FX.Custom_Types.Texture()
                     {
                         Textures = AddImage(tex),
-                        TexCoord = "CHANNEL0"
+                        TexCoord = "CHANNEL0",
                     }
             };
         }
@@ -189,7 +192,7 @@ namespace IONET.Collada
                         {
                             sID = "standard",
                             Phong = phong
-                        }
+                        },
                     }
                 }
             };

@@ -13,7 +13,7 @@ namespace IONET.SMD
         /// </summary>
         /// <param name="scene"></param>
         /// <param name="filePath"></param>
-        public void ExportScene(IOScene scene, string filePath)
+        public void ExportScene(IOScene scene, string filePath, ExportSettings settings)
         {
             if (scene.Models.Count == 0)
                 return;

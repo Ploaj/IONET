@@ -224,7 +224,7 @@ namespace IONET
                             }
                         }
 
-                        l.ExportScene(scene, filePath);
+                        l.ExportScene(scene, filePath, settings);
                         break;
                     }
         }

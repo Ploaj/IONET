@@ -6,6 +6,6 @@
 
         string[] GetExtensions();
 
-        void ExportScene(IOScene scene, string filePath);
+        void ExportScene(IOScene scene, string filePath, ExportSettings settings);
     }
 }

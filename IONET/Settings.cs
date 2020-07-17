@@ -78,5 +78,18 @@ namespace IONET
         /// </summary>
         [Category("Vertices"), DisplayName("Optimize"), Description("Reduces number of vertices by combining duplicates")]
         public bool Optimize { get; set; } = true;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Category("Materials"), DisplayName("Export Texture Info"), Description("Blender tends not like dae's with texture info")]
+        public bool ExportTextureInfo { get; set; } = true;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Category("Materials"), DisplayName("Export Material Info"), Description("Exports material info if format supports it")]
+        public bool ExportMaterialInfo { get; set; } = true;
+
     }
 }
