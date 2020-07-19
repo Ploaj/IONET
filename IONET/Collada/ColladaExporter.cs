@@ -150,13 +150,13 @@ namespace IONET.Collada
                 Color = new IONET.Collada.Core.Lighting.Color()
                 { sID = sid, Value_As_String = $"{color.X} {color.Y} {color.Z} {color.W}" },
 
-                Texture = tex == null && _settings.ExportTextureInfo ? 
-                    null : 
+                Texture = tex != null && _settings.ExportTextureInfo ? 
                     new IONET.Collada.FX.Custom_Types.Texture()
                     {
                         Textures = AddImage(tex),
                         TexCoord = "CHANNEL0",
-                    }
+                    } : 
+                    null
             };
         }
 
