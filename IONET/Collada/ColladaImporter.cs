@@ -125,8 +125,8 @@ namespace IONET.Collada
 
             if(n.Instance_Controller != null)
                foreach(var c in n.Instance_Controller)
-                    if(c.Skeleton != null)
-                        foreach(var s in c.Skeleton)
+                    if (c.Skeleton != null)
+                        foreach (var s in c.Skeleton)
                             jointIDs.Add(s.Value.Substring(1, s.Value.Length - 1));
 
             return jointIDs.Count > 0;
@@ -231,8 +231,16 @@ namespace IONET.Collada
             }
 
             // detect skeleton
-            if ((!string.IsNullOrEmpty(n.ID) && skeletonIds.Contains(n.ID)) ||
-                (n.Type == Node_Type.JOINT && parent == null))
+            if ((!string.IsNullOrEmpty(bone.Name) && skeletonIds.Contains(bone.Name)) ||
+                (n.Type == Node_Type.JOINT && parent == null) ||
+                (n.Instance_Camera == null && 
+                n.Instance_Controller == null &&
+                n.Instance_Geometry == null &&
+                n.Instance_Light == null && 
+                n.Instance_Node == null && 
+                parent == null && 
+                n.node != null && 
+                n.node.Length > 0))
             {
                 model.Skeleton.RootBones.Add(bone);
             }
