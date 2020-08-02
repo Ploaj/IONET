@@ -97,6 +97,9 @@ namespace IONET.Core.Model
                     nonTri.Add(p);
                     continue;
                 }
+
+                if (p.MaterialName == null)
+                    p.MaterialName = "No_Material";
                 
                 // add indices based on material
                 if (!materialToPolygon.ContainsKey(p.MaterialName))

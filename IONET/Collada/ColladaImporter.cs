@@ -517,7 +517,8 @@ namespace IONET.Collada
 
             IOMaterial material = new IOMaterial()
             {
-                Name = mat.Name
+                Name = mat.ID,
+                Label = mat.Name
             };
             
             if(effect != null && effect.Profile_COMMON != null && effect.Profile_COMMON.Length > 0)

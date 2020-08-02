@@ -13,6 +13,8 @@ namespace IONET.Core.Model
         /// </summary>
         public string Name { get; set; }
 
+        public string Label { get; set; }
+
         public Vector4 AmbientColor { get; set; } = new Vector4(0.2f, 0.2f, 0.2f, 1);
         public IOTexture AmbientMap { get; set; }
 
