@@ -16,7 +16,7 @@ namespace IONET.Fbx
         {
             FbxHelper helper = new FbxHelper(FbxIO.ReadBinary(filePath));
 
-            if (helper.Version != 7400 && helper.Version != 6100)
+            if (helper.Version != 7400 && helper.Version != 6100 && helper.Version != 7500)
                 throw new NotSupportedException($"FBX Version {helper.Version} not supported");
 
             IOScene scene = new IOScene();

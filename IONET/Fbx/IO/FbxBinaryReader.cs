@@ -163,11 +163,11 @@ namespace IONET.Fbx.IO
 		/// <returns>The node</returns>
 		/// <exception cref="FbxException">The FBX data was malformed
 		/// for the reader's error level</exception>
-		public FbxNode ReadNode()
+		public FbxNode ReadNode(int version)
 		{
-			var endOffset = stream.ReadInt32();
-			var numProperties = stream.ReadInt32();
-			var propertyListLen = stream.ReadInt32();
+			var endOffset = (version > 7400) ? stream.ReadInt64() : stream.ReadInt32();
+			var numProperties = (version > 7400) ? stream.ReadInt64() : stream.ReadInt32();
+			var propertyListLen = (version > 7400) ? stream.ReadInt64() : stream.ReadInt32();
 			var nameLen = stream.ReadByte();
 			var name = nameLen == 0 ? "" : Encoding.ASCII.GetString(stream.ReadBytes(nameLen));
 
@@ -201,7 +201,7 @@ namespace IONET.Fbx.IO
 				FbxNode nested;
 				do
 				{
-					nested = ReadNode();
+					nested = ReadNode(version);
 					node.Nodes.Add(nested);
 				} while (nested != null);
 				if (errorLevel >= ErrorLevel.Checked && stream.BaseStream.Position != endOffset)
@@ -231,7 +231,7 @@ namespace IONET.Fbx.IO
 			FbxNode nested;
 			do
 			{
-				nested = ReadNode();
+				nested = ReadNode((int)document.Version);
 				if(nested != null)
 					document.Nodes.Add(nested);
 			} while (nested != null);
