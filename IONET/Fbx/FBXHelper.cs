@@ -31,7 +31,7 @@ namespace IONET.Fbx
         {
             get
             {
-                if(Version == 7400)
+                if(Version == 7400 || Version == 7500)
                     return 4;
 
                 return 3;
@@ -46,7 +46,7 @@ namespace IONET.Fbx
         {
             get
             {
-                if (Version == 7400)
+                if (Version == 7400 || Version == 7500)
                     return 3;
 
                 return 2;
@@ -99,7 +99,7 @@ namespace IONET.Fbx
         public IOSkeleton GetSkeleton()
         {
             // search all limb nodes
-            var limbs = _document.GetNodesByName("Model").Where(e => e.Properties.Count >= NodeDescSize && e.Properties[NodeDescSize - 1].ToString() == "LimbNode");
+            var limbs = _document.GetNodesByName("Model").Where(e => e.Properties.Count >= NodeDescSize && e.Properties[NodeDescSize - 1].ToString().Contains("Limb"));
 
             // map the id to the newly create bone
             Dictionary<string, IOBone> idToBone = new Dictionary<string, IOBone>();
@@ -491,7 +491,7 @@ namespace IONET.Fbx
                 };
 
                 // load material attributes
-                if(m["ShadingModel"] != null && m["ShadingModel"].Properties[0].ToString() == "phong")
+                if(m["ShadingModel"] != null && m["ShadingModel"].Properties[0].ToString().ToLower() == "phong")//ToLower Because it's sometimes "Phong" 
                 {
                     var properties = m.GetNodesByName("P");
                     if (properties.Length == 0)
