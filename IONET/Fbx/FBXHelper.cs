@@ -1,4 +1,5 @@
-﻿using IONET.Core.IOMath;
+﻿using IONET.Collada.FX.Custom_Types;
+using IONET.Core.IOMath;
 using IONET.Core.Model;
 using IONET.Core.Skeleton;
 using IONET.Fbx.IO;
@@ -6,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace IONET.Fbx
@@ -31,7 +33,7 @@ namespace IONET.Fbx
         {
             get
             {
-                if(Version == 7400 || Version == 7500)
+                if(Version > 7000)
                     return 4;
 
                 return 3;
@@ -46,7 +48,7 @@ namespace IONET.Fbx
         {
             get
             {
-                if (Version == 7400 || Version == 7500)
+                if (Version > 7000)
                     return 3;
 
                 return 2;
@@ -481,7 +483,7 @@ namespace IONET.Fbx
         public List<IOMaterial> GetMaterials()
         {
             List<IOMaterial> materials = new List<IOMaterial>();
-            
+
             foreach(var m in _document.GetNodesByName("Material"))
             {
                 // generate material
