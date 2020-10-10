@@ -14,6 +14,8 @@ namespace IONET.Core.Skeleton
         /// </summary>
         public string Name { get; set; } = "Bone";
 
+        public string AltID { get; set; } = "";
+
         /// <summary>
         /// This Node's Parent Node
         /// </summary>

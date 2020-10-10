@@ -31,7 +31,7 @@ namespace IONET.Fbx
         {
             get
             {
-                if(Version == 7400)
+                if(Version == 7400 || Version == 7200)
                     return 4;
 
                 return 3;
@@ -46,7 +46,7 @@ namespace IONET.Fbx
         {
             get
             {
-                if (Version == 7400)
+                if (Version == 7400 || Version == 7200)
                     return 3;
 
                 return 2;

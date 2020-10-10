@@ -1,4 +1,5 @@
 ﻿using IONET.Core.IOMath;
+using IONET.Core.Skeleton;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +21,11 @@ namespace IONET.Core.Model
         /// 
         /// </summary>        
         public List<IOVertex> Vertices = new List<IOVertex>();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public IOBone ParentBone;
 
         /// <summary>
         /// 
