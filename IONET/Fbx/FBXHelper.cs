@@ -1,4 +1,3 @@
-﻿using IONET.Collada.FX.Custom_Types;
 using IONET.Core.IOMath;
 using IONET.Core.Model;
 using IONET.Core.Skeleton;
@@ -7,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace IONET.Fbx
