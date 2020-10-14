@@ -358,7 +358,7 @@ namespace IONET.Collada
 
                 n.Instance_Geometry = new Instance_Geometry[] { geom };
 
-                n.Instance_Controller[0].Bind_Material = new IONET.Collada.FX.Materials.Bind_Material[]
+                n.Instance_Geometry[0].Bind_Material = new IONET.Collada.FX.Materials.Bind_Material[]
                 {
                     new Bind_Material()
                     {

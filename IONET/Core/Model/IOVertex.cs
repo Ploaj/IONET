@@ -66,6 +66,11 @@ namespace IONET.Core.Model
             foreach (var bw in Envelope.Weights)
             {
                 var bone = skeleton.GetBoneByName(bw.BoneName);
+
+                if (bone == null)
+                    throw new KeyNotFoundException($"Bone {bw.BoneName} not found");
+
+                // calculate bind matrix
                 var bind = bw.BindMatrix * bone.WorldTransform;
 
                 // rebind

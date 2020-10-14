@@ -45,7 +45,7 @@ namespace IONET.Core.Skeleton
         /// <returns></returns>
         public IOBone GetBoneByName(string name)
         {
-            return BreathFirstOrder().Find(e=>e.Name == name);
+            return BreathFirstOrder().Find(e=>e.Name == name || e.AltID == name);
         }
         
         /// <summary>

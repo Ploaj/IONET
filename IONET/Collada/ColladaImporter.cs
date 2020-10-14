@@ -142,7 +142,8 @@ namespace IONET.Collada
             // create bone to represent node
             IOBone bone = new IOBone()
             {
-                Name = n.Name
+                Name = n.Name,
+                AltID = n.sID
             };
 
             // load matrix
@@ -215,6 +216,7 @@ namespace IONET.Collada
                 {
                     var geom = LoadGeometryFromID(n, g.URL);
                     geom.TransformVertices(bone.WorldTransform);
+                    geom.ParentBone = bone;
                     model.Meshes.Add(geom);
                 }
             }
@@ -226,6 +228,7 @@ namespace IONET.Collada
                 {
                     var geom = LoadGeometryControllerFromID(n, c.URL);
                     geom.TransformVertices(bone.WorldTransform);
+                    geom.ParentBone = bone;
                     model.Meshes.Add(geom);
                 }
             }
@@ -383,6 +386,7 @@ namespace IONET.Collada
             {
                 foreach (var tri in geom.Mesh.Triangles)
                 {
+                    var stride = tri.Input.Max(e => e.Offset) + 1;
                     var poly = new IOPolygon() {
                         PrimitiveType = IOPrimitive.TRIANGLE,
                         MaterialName = tri.Material
@@ -398,7 +402,7 @@ namespace IONET.Collada
                         {
                             var input = tri.Input[j];
 
-                            var index = p[i * tri.Input.Length + input.Offset];
+                            var index = p[i * stride + input.Offset];
 
                             ProcessInput(input.Semantic, input.source, input.Set, vertex, geom.Mesh.Vertices, index, srcs, vertexEnvelopes);
                         }
