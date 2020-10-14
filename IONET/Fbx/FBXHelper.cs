@@ -120,6 +120,11 @@ namespace IONET.Fbx
                     skeleton.RootBones.Add(v.Value);
             }
 
+            // account for blender's armature node
+            var nullParent = GetBoneParentTransform();
+            foreach (var skel in skeleton.RootBones)
+                skel.LocalTransform *= nullParent;
+            
             return skeleton;
         }
 
@@ -183,11 +188,45 @@ namespace IONET.Fbx
         /// 
         /// </summary>
         /// <returns></returns>
+        public Matrix4x4 GetBoneParentTransform()
+        {
+            // get limbs
+            var limbs = _document.GetNodesByName("Model").Where(e => e.Properties.Count >= NodeDescSize && e.Properties[NodeDescSize - 1].ToString().Contains("Limb")).Select(e=>e.Value.ToString());
+
+            // get null model nodes
+            var nulls = _document.GetNodesByName("Model").Where(e => e.Properties.Count >= NodeDescSize && e.Properties[NodeDescSize - 1].ToString().Contains("Null"));
+            
+            // convert nodes to bones
+            foreach (var n in nulls)
+            {
+                foreach (var l in limbs)
+                {
+                    if (Connections.ContainsKey(l) && Connections[l].Count > 0)
+                    {
+                        var con = Connections[l];
+
+                        if (con.Contains(n.Value.ToString()))
+                        {
+                            System.Diagnostics.Debug.WriteLine("Found Bone");
+                            return CreateBoneFromNode(n).LocalTransform;
+                        }
+                    }
+                }
+            }
+
+            // nothing found
+            return Matrix4x4.Identity;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public List<IOMesh> ExtractMesh()
         {
             // gather mesh objects
             var mesh = _document.GetNodesByName("Model").Where(e => e.Properties.Count >= NodeDescSize && e.Properties[NodeDescSize - 1].ToString() == "Mesh");
-
+            
             List<IOMesh> meshes = new List<IOMesh>();
 
             var subdeformers = _document.GetNodesByName("SubDeformer");
@@ -341,12 +380,55 @@ namespace IONET.Fbx
 
             poly.PrimitiveType = IOPrimitive.TRIANGLE;
             
-            // TODO: triangle strips detection and processing
-            // for now assuming always triangluated
+            // process primitives and convert to triangles
+            var primLength = 0;
             for (int i = 0; i < indices.Length; i++)
             {
                 var idx1 = indices[i];
-                if(idx1 < 0) idx1 = Math.Abs(idx1) - 1;
+                
+                primLength++;
+
+                if (idx1 < 0)
+                {
+                    switch(primLength)
+                    {
+                        case 4:
+                            // convert quad to triangle
+                            poly.Indicies.Add(i - 3);
+                            poly.Indicies.Add(i - 2);
+                            poly.Indicies.Add(i - 1);
+                            poly.Indicies.Add(i - 3);
+                            poly.Indicies.Add(i - 1);
+                            poly.Indicies.Add(i);
+                            break;
+                        case 3:
+                            // triangle
+                            poly.Indicies.Add(i - 2);
+                            poly.Indicies.Add(i - 1);
+                            poly.Indicies.Add(i);
+                            break;
+                        default:
+                            // tri strip
+                            for (var vi = i - primLength; vi < i - 2; vi++)
+                                if ((vi & 1) != 0)
+                                {
+                                    poly.Indicies.Add(vi);
+                                    poly.Indicies.Add(vi + 1);
+                                    poly.Indicies.Add(vi + 2);
+                                }
+                                else
+                                {
+                                    poly.Indicies.Add(vi);
+                                    poly.Indicies.Add(vi + 2);
+                                    poly.Indicies.Add(vi + 1);
+                                }
+                            break;
+                    }
+
+                    idx1 = Math.Abs(idx1) - 1; // xor -1
+
+                    primLength = 0;
+                }
 
                 IOVertex v = new IOVertex()
                 {
@@ -354,7 +436,7 @@ namespace IONET.Fbx
                 };
 
                 // find deforms
-                foreach(var map in deforms)
+                foreach (var map in deforms)
                 {
                     if (map.ContainsKey(idx1))
                     {
@@ -365,8 +447,8 @@ namespace IONET.Fbx
                         });
                     }
                 }
+                
 
-                poly.Indicies.Add(i);
                 verts.Add(v);
             }
 
