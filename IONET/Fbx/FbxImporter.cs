@@ -16,7 +16,11 @@ namespace IONET.Fbx
         {
             FbxHelper helper = new FbxHelper(FbxIO.ReadBinary(filePath));
 
-            if (helper.Version != 7400 && helper.Version != 7200 && helper.Version != 6100 && helper.Version != 7500)
+
+            //TODO: FBX Version 2006-2010 unupported. (Anything < 7100 works. But textures aren't grabbed)
+            //FBX Version 2011-2020 <-- Tested & Supported!
+            //FBX Version 2011-2020 currently supported
+            if (helper.Version < 7100)
                 throw new NotSupportedException($"FBX Version {helper.Version} not supported");
 
             IOScene scene = new IOScene();

@@ -41,5 +41,10 @@ namespace IONET.Fbx.IO
 		/// FBX 2014 version
 		/// </summary>
 		v7_4 = 7400,
+
+		/// <summary>
+		/// FBX 2015 version
+		/// </summary>
+		v7_5 = 7500,
 	}
 }
