@@ -115,7 +115,7 @@ namespace IONET.Collada
 
 		[XmlElement(ElementName = "extra")]
 		public Extra[] Extra;
-		
+
         /// <summary>
         /// Save to XML file
         /// </summary>
@@ -140,20 +140,20 @@ namespace IONET.Collada
         /// <returns></returns>
         public static Collada LoadFromFile(string fileName)
         {
-            try
+            //try
             {
                 Collada collada = null;
 
                 XmlSerializer serializer = new XmlSerializer(typeof(Collada));
-                using (TextReader stream = new StreamReader(fileName))
+                using (StreamReader stream = new StreamReader(fileName))
                     collada = (Collada)(serializer.Deserialize(stream));
 
                 return collada;
             }
-            catch (Exception ex)
+            //catch (Exception ex)
             {
-                Debug.WriteLine(ex.ToString());
-                return null;
+                //Debug.WriteLine(ex.ToString());
+                //return null;
             }
         }
     }

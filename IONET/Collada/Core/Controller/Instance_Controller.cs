@@ -15,13 +15,13 @@ namespace IONET.Collada.Core.Controller
 		public string Name;	
 		
 		[XmlAttribute("url")]
-		public string URL;	
+		public string URL;
 
-	    [XmlElement(ElementName = "bind_material")]
-		public IONET.Collada.FX.Materials.Bind_Material[] Bind_Material;			
-			
-	    [XmlElement(ElementName = "skeleton")]
-		public IONET.Collada.Core.Controller.Skeleton[] Skeleton;			
+        [XmlElement(ElementName = "skeleton")]
+        public IONET.Collada.Core.Controller.Skeleton[] Skeleton;
+
+        [XmlElement(ElementName = "bind_material")]
+		public IONET.Collada.FX.Materials.Bind_Material[] Bind_Material;				
 		
 	    [XmlElement(ElementName = "extra")]
 		public IONET.Collada.Core.Extensibility.Extra[] Extra;

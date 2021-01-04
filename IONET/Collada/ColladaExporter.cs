@@ -18,6 +18,7 @@ using IONET.Collada.FX.Effects;
 using IONET.Collada.FX.Texturing;
 using IONET.Collada.FX.Rendering;
 using IONET.Collada.Core.Parameters;
+using System.Xml;
 
 namespace IONET.Collada
 {
@@ -143,20 +144,52 @@ namespace IONET.Collada
         /// <param name="color"></param>
         /// <param name="tex"></param>
         /// <returns></returns>
-        private FX_Common_Color_Or_Texture_Type GenerateTextureInfo(string sid, Vector4 color, IOTexture tex)
+        private FX_Common_Color_Or_Texture_Type GenerateTextureInfo(string sid, Vector4 color, IOTexture tex, List<New_Param> textureParams)
         {
+            FX.Custom_Types.Texture texData = null;
+
+            if(tex != null)
+            {
+                var surfaceString = AddImage(tex);
+
+                var doc = new XmlDocument();
+
+                var surfacenode = doc.CreateElement("surface", "http://www.collada.org/2005/11/COLLADASchema");
+                surfacenode.SetAttribute("type", "2D");
+                var init_node = doc.CreateElement("init_from", "http://www.collada.org/2005/11/COLLADASchema");
+                init_node.InnerText = surfaceString;
+                surfacenode.AppendChild(init_node);
+
+                textureParams.Add(new New_Param()
+                {
+                    sID = surfaceString + "_surface",
+                    Data = new XmlElement[] { surfacenode }
+                });
+
+                var samplernode = doc.CreateElement("sampler2D", "http://www.collada.org/2005/11/COLLADASchema");
+                var sourceNode = doc.CreateElement("source", "http://www.collada.org/2005/11/COLLADASchema");
+                sourceNode.InnerText = surfaceString + "_surface";
+                samplernode.AppendChild(sourceNode);
+
+                textureParams.Add(new New_Param()
+                {
+                    sID = surfaceString + "_sampler",
+                    Data = new XmlElement[] { samplernode }
+                });
+
+                texData = new IONET.Collada.FX.Custom_Types.Texture()
+                {
+                    Textures = surfaceString + "_sampler",
+                    TexCoord = "CHANNEL0",
+                };
+            }
+            
             return new FX_Common_Color_Or_Texture_Type()
             {
                 Color = new IONET.Collada.Core.Lighting.Color()
                 { sID = sid, Value_As_String = $"{color.X} {color.Y} {color.Z} {color.W}" },
 
-                Texture = tex != null && _settings.ExportTextureInfo ? 
-                    new IONET.Collada.FX.Custom_Types.Texture()
-                    {
-                        Textures = AddImage(tex),
-                        TexCoord = "CHANNEL0",
-                    } : 
-                    null
+                Texture = _settings.ExportTextureInfo ? texData : null
             };
         }
 
@@ -166,17 +199,19 @@ namespace IONET.Collada
         /// <param name="mat"></param>
         private void ProcessMaterial(IOMaterial mat)
         {
+            List<New_Param> textureParams = new List<New_Param>();
+
             // create phong shading
             var phong = new Phong()
             {
                 Shininess = new FX_Common_Float_Or_Param_Type { Float = new IONET.Collada.Types.SID_Float() { sID = "shininess", Value = mat.Shininess } },
                 Transparency = new FX_Common_Float_Or_Param_Type() { Float = new IONET.Collada.Types.SID_Float() { sID = "transparency", Value = mat.Alpha } },
                 Reflectivity = new FX_Common_Float_Or_Param_Type() { Float = new IONET.Collada.Types.SID_Float() { sID = "reflectivity", Value = mat.Reflectivity } },
-                Ambient = GenerateTextureInfo("ambient", mat.AmbientColor, mat.AmbientMap),
-                Diffuse = GenerateTextureInfo("diffuse", mat.DiffuseColor, mat.DiffuseMap),
-                Specular = GenerateTextureInfo("specular", mat.SpecularColor, mat.SpecularMap),
-                Emission = GenerateTextureInfo("emission", mat.EmissionColor, mat.EmissionMap),
-                Reflective = GenerateTextureInfo("reflective", mat.ReflectiveColor, mat.ReflectiveMap),
+                Ambient = GenerateTextureInfo("ambient", mat.AmbientColor, mat.AmbientMap, textureParams),
+                Diffuse = GenerateTextureInfo("diffuse", mat.DiffuseColor, mat.DiffuseMap, textureParams),
+                Specular = GenerateTextureInfo("specular", mat.SpecularColor, mat.SpecularMap, textureParams),
+                Emission = GenerateTextureInfo("emission", mat.EmissionColor, mat.EmissionMap, textureParams),
+                Reflective = GenerateTextureInfo("reflective", mat.ReflectiveColor, mat.ReflectiveMap, textureParams),
             };
 
             // create effect
@@ -193,6 +228,7 @@ namespace IONET.Collada
                             sID = "standard",
                             Phong = phong
                         },
+                        New_Param = textureParams.ToArray()
                     }
                 }
             };
@@ -280,9 +316,14 @@ namespace IONET.Collada
             foreach (var root in model.Skeleton.RootBones)
                 nodes.Add(ProcessSkeleton(root));
 
+            // get root bone
+            IOBone rootBone = null;
+            if (model.Skeleton != null && model.Skeleton.RootBones.Count > 0)
+                rootBone = model.Skeleton.RootBones[0];
+
             // mesh
             foreach (var mesh in model.Meshes)
-                nodes.Add(ProcessMesh(mesh, model));
+                nodes.Add(ProcessMesh(mesh, model, rootBone));
 
             return nodes;
         }
@@ -319,7 +360,7 @@ namespace IONET.Collada
         /// </summary>
         /// <param name="mesh"></param>
         /// <returns></returns>
-        private Node ProcessMesh(IOMesh mesh, IOModel model)
+        private Node ProcessMesh(IOMesh mesh, IOModel model, IOBone rootBone)
         {
             Node n = new Node()
             {
@@ -336,6 +377,9 @@ namespace IONET.Collada
                 var geom = new Instance_Controller();
 
                 geom.URL = "#" + GenerateGeometryController(mesh, model.Skeleton);
+
+                if (rootBone != null)
+                    geom.Skeleton = new Skeleton[] { new Skeleton() { Value = "#" + rootBone.Name } };
 
                 n.Instance_Controller = new Instance_Controller[] { geom };
                 
@@ -402,8 +446,8 @@ namespace IONET.Collada
             List<string> boneNames = new List<string>();
             List<float> boneBinds = new List<float>();
             List<float> weights = new List<float>();
-            
-            foreach(var v in mesh.Vertices)
+
+            foreach (var v in mesh.Vertices)
             {
                 weightCounts.Add(v.Envelope.Weights.Count);
                 foreach(var bw in v.Envelope.Weights)
@@ -419,12 +463,21 @@ namespace IONET.Collada
                             mat.M14, mat.M24, mat.M34, mat.M44
                         });
                     }
+
                     if (!weights.Contains(bw.Weight))
                         weights.Add(bw.Weight);
 
                     binds.Add(boneNames.IndexOf(bw.BoneName));
                     binds.Add(weights.IndexOf(bw.Weight));
                 }
+            }
+
+            if (_settings.BlenderMode)
+            {
+                // blender is so stupid
+                // the binds need to be every so slightly different or it kills bones
+                for (int i = 0; i < boneBinds.Count; i++)
+                    boneBinds[i] += 0.000001f;
             }
 
             var mid = GetUniqueID(mesh.Name + "-matrices");
@@ -456,7 +509,8 @@ namespace IONET.Collada
                             {
                                 new IONET.Collada.Core.Parameters.Param()
                                 {
-                                    Type = "name"
+                                    Name = "JOINT",
+                                    Type = "Name"
                                 }
                             },
                             Stride = 1
@@ -482,6 +536,7 @@ namespace IONET.Collada
                             {
                                 new IONET.Collada.Core.Parameters.Param()
                                 {
+                                    Name = "TRANSFORM",
                                     Type = "float4x4"
                                 }
                             },
@@ -508,6 +563,7 @@ namespace IONET.Collada
                             {
                                 new IONET.Collada.Core.Parameters.Param()
                                 {
+                                    Name = "WEIGHT",
                                     Type = "float"
                                 }
                             },

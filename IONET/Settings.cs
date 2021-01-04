@@ -91,5 +91,11 @@ namespace IONET
         [Category("Materials"), DisplayName("Export Material Info"), Description("Exports material info if format supports it")]
         public bool ExportMaterialInfo { get; set; } = true;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        [Category("Misc"), DisplayName("Blender Mode"), Description("Helps with blender compatibility (DAE ONLY)")]
+        public bool BlenderMode { get; set; } = true;
+
     }
 }

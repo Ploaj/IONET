@@ -47,6 +47,9 @@ namespace IONET.Collada
             // load collada file
             _collada = Collada.LoadFromFile(filePath);
 
+            // failed to load collada file
+            if (_collada == null)
+                return scene;
 
             // load material library's to scene
             if(_collada.Library_Materials != null)
