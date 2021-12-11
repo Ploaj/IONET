@@ -22,6 +22,11 @@ namespace IONET.Core
         public List<IOMaterial> Materials { get; internal set; } = new List<IOMaterial>();
 
         /// <summary>
+        /// 
+        /// </summary>
+        public List<IOAnimation> Animations { get; internal set; } = new List<IOAnimation>();
+
+        /// <summary>
         /// Cleans material names to allow for smoother export
         /// </summary>
         public void CleanMaterialNames()

@@ -54,6 +54,21 @@ namespace IONET.Fbx
         }
 
         /// <summary>
+        /// Numer used to describe the abount of units used in a frame
+        /// Different depending on fbx version
+        /// </summary>
+        private long UnitsPerFrame
+        {
+            get
+            {
+                if (Version >= 7400)
+                    return 1539538600;
+
+                return 1924423250;
+            }
+        }
+
+        /// <summary>
         /// Gets FBX document version
         /// </summary>
         public int Version
@@ -90,6 +105,166 @@ namespace IONET.Fbx
 
                 Connections[oo.Properties[1].ToString()].Add(oo.Properties[2].ToString());
             }
+        }
+
+        /// <summary>
+        /// Gets a list of animations from the fbx animation stack.
+        /// </summary>
+        /// <returns></returns>
+        public List<IOAnimation> GetAnimations()
+        {
+            List<IOAnimation> anims = new List<IOAnimation>();
+
+            foreach (var node in _document.GetNodesByName("AnimationStack")) {
+                //Create the animation.
+                IOAnimation currentAnim = LoadAnimationStack(node);
+                anims.Add(currentAnim);
+
+                //Use the stop amount from the animation properties for the end frame.
+                currentAnim.EndFrame = ConvertTimeUnits((long)node["Properties70"].GetNodesByValue("LocalStop")[0].Properties[4]);
+
+                //AnimationLayer
+                foreach (var layer in GetChildConnections(node))
+                {
+                    IOAnimation currentGroup = LoadAnimationLayer(node);
+                    currentAnim.Groups.Add(currentGroup);
+
+                    //AnimationCurveNode
+                    foreach (var curveNode in GetChildConnections(layer))
+                    {
+                        //All tracks have the same animated object reference. 
+                        //Set it per group still.
+                        currentGroup.Name = FindAnimatedObject(curveNode);
+
+                        //Only care about the node type.
+                        string trackNodeType = curveNode.Properties[NodeDescSize - 2].ToString();
+                        //Go through each AnimationCurve
+                        var curves = GetChildConnections(curveNode);
+                        for (int i = 0; i < curves.Count; i++)
+                            currentGroup.Tracks.Add(LoadAnimationCurve(curves[i], trackNodeType, i));
+                    }
+                }
+            }
+
+            return anims;
+        }
+
+        private string FindAnimatedObject(FbxNode curveNode)
+        {
+            //Find the object connected to the animation node
+            foreach (var n in GetParentConnections(curveNode))
+            {
+                switch (n.Name)
+                {
+                    case "AnimationLayer":
+                        break;
+                    //Model type which can be a Mesh or Limb. Extract the name itself
+                    case "Model":
+                    case "NodeAttribute":
+                        return GetNameWithoutNamespace(n.Properties[NodeDescSize - 2].ToString());
+                    default:
+                        Console.WriteLine($"Unsupported link type {n.Name}");
+                        break;
+                }
+            }
+            return "";
+        }
+
+        private IOAnimation LoadAnimationStack(FbxNode node)
+        {
+            return new IOAnimation()
+            {
+                Name = GetNameWithoutNamespace(node.Properties[NodeDescSize - 2].ToString())
+
+            };
+        }
+
+        private IOAnimation LoadAnimationLayer(FbxNode node)
+        {
+            return new IOAnimation()
+            {
+                Name = GetNameWithoutNamespace(node.Properties[NodeDescSize - 2].ToString())
+            };
+        }
+
+        private IOAnimationTrack LoadAnimationCurve(FbxNode node, string trackNodeType, int trackIndex)
+        {
+            IOAnimationTrack track = new IOAnimationTrack();
+            //Track types via the parent curve node.
+            //Each child curve track has an index which assigns to X/Y/Z
+            switch (trackNodeType)
+            {
+                case "AnimCurveNode::T":
+                    if (trackIndex == 0) track.ChannelType = IOAnimationTrackType.PositionX;
+                    if (trackIndex == 1) track.ChannelType = IOAnimationTrackType.PositionY;
+                    if (trackIndex == 2) track.ChannelType = IOAnimationTrackType.PositionZ;
+                    break;
+                case "AnimCurveNode::R":
+                    if (trackIndex == 0) track.ChannelType = IOAnimationTrackType.RotationEulerX;
+                    if (trackIndex == 1) track.ChannelType = IOAnimationTrackType.RotationEulerY;
+                    if (trackIndex == 2) track.ChannelType = IOAnimationTrackType.RotationEulerZ;
+                    break;
+                case "AnimCurveNode::S":
+                    if (trackIndex == 0) track.ChannelType = IOAnimationTrackType.ScaleX;
+                    if (trackIndex == 1) track.ChannelType = IOAnimationTrackType.ScaleY;
+                    if (trackIndex == 2) track.ChannelType = IOAnimationTrackType.ScaleZ;
+                    break;
+            }
+
+            //Duriation of the key frame
+            var keyTime = node["KeyTime"].Value as long[];
+            //The key data
+            var keyFloats = node["KeyValueFloat"].Value as float[];
+            //Determines how a key is handled
+            var keyAttributes = node["KeyAttrDataFloat"].Value as float[];
+            //How many references used in each attribute
+            var keyAttributeRefs = node["KeyAttrRefCount"].Value as int[];
+            //The flags for key data. These determine interpolation info
+            var keyAttributeFlags = node["KeyAttrFlags"].Value as int[];
+
+            int k = 0;
+            for (int i = 0; i < keyAttributeRefs.Length; i++)
+            {
+                //4 attributes. 
+                float rightSlope = keyAttributes[4 * i + 0];
+                float nextLeftSlope = keyAttributes[4 * i + 1];
+                float tangentData = keyAttributes[4 * i + 2];
+
+                int flags = keyAttributeFlags[i];
+                var attrCount = keyAttributeRefs[i];
+
+                var interpolation = (EInterpolationType)(flags & 0x0000000e);
+                for (int j = 0; j < attrCount; j++)
+                {
+                    //Time to frame units
+                    float frame = ConvertTimeUnits(keyTime[k]);
+                    float time = frame == 0 ? 0 : frame / 24.0f;
+                    //The raw key value
+                    float value = keyFloats[k];
+                    //Create key frames.
+                    switch (interpolation)
+                    {
+                        case EInterpolationType.eInterpolationCubic: //Todo figure out tangents from attribute data
+                            track.KeyFrames.Add(new IOKeyFrameCubic()
+                            {
+                                Frame = frame,
+                                Time = time,
+                                Value = value,
+                            });
+                            break;
+                        default:
+                            track.KeyFrames.Add(new IOKeyFrame()
+                            {
+                                Frame = frame,
+                                Time = time,
+                                Value = value,
+                            });
+                            break;
+                    }
+                    k++;
+                }
+            }
+            return track;
         }
 
         /// <summary>
@@ -241,7 +416,6 @@ namespace IONET.Fbx
                 };
                 meshes.Add(iomesh);
 
-
                 // reverse search material
                 var material = "";
                 var materials = GetChildConnections(m).Find(e => e.Name == "Material");
@@ -282,6 +456,25 @@ namespace IONET.Fbx
 
 
             return meshes;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        private List<FbxNode> GetParentConnections(FbxNode m)
+        {
+            List<FbxNode> nodes = new List<FbxNode>();
+            if (Connections.ContainsKey(m.Value.ToString()))
+            {
+                foreach (var con in Connections[m.Value.ToString()])
+                {
+                    var node = _document.GetNodesByValue(con);
+                    if (node != null)
+                        nodes.AddRange(node);
+                }
+            }
+            return nodes;
         }
 
         /// <summary>
@@ -674,6 +867,20 @@ namespace IONET.Fbx
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Converts time units from a given long into a frame value.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+         public float ConvertTimeUnits(long value) => (value / UnitsPerFrame);
+
+        enum EInterpolationType
+        {
+            eInterpolationConstant = 0x00000002,
+            eInterpolationLinear = 0x00000004,
+            eInterpolationCubic = 0x00000008
         }
     }
 }
