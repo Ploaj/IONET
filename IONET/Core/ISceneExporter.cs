@@ -1,6 +1,6 @@
 ﻿namespace IONET.Core
 {
-    public interface IModelExporter
+    public interface ISceneExporter
     {
         string Name();
 

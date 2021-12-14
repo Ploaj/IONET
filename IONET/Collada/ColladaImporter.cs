@@ -17,7 +17,7 @@ using System.Xml;
 
 namespace IONET.Collada
 {
-    public class ColladaImporter : IModelLoader
+    public class ColladaImporter : ISceneLoader
     {
         /// <summary>
         /// 

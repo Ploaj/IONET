@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace IONET
+namespace IONET.Core.Animation
 {
     public class IOAnimationTrack
     {
@@ -12,6 +12,16 @@ namespace IONET
         /// 
         /// </summary>
         public IOAnimationTrackType ChannelType { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public IOCurveWrapMode PreWrap { get; set; } = IOCurveWrapMode.Constant;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public IOCurveWrapMode PostWrap { get; set; } = IOCurveWrapMode.Constant;
 
         /// <summary>
         /// 

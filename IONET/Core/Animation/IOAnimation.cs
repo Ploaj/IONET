@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using IONET.Core.Skeleton;
 
-namespace IONET
+namespace IONET.Core.Animation
 {
     public class IOAnimation
     {
@@ -35,12 +34,11 @@ namespace IONET
         /// <summary>
         /// 
         /// </summary>
-        /// <returns></returns>
-        public float CalculateFrameCount()
+        public float GetFrameCount()
         {
             float frameCount = 0;
             foreach (var group in Groups)
-                frameCount = Math.Max(frameCount, group.CalculateFrameCount());
+                frameCount = Math.Max(frameCount, group.GetFrameCount());
             foreach (var track in Tracks)
             {
                 //Important to +1 as the frame is the currently played frame in a keyframe

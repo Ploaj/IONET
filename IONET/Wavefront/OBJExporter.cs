@@ -4,7 +4,7 @@ using System.IO;
 
 namespace IONET.Wavefront
 {
-    public class OBJExporter : IModelExporter
+    public class OBJExporter : ISceneExporter
     {
         /// <summary>
         /// 

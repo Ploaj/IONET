@@ -1,6 +1,6 @@
 ﻿namespace IONET.Core
 {
-    public interface IModelLoader
+    public interface ISceneLoader
     {
         string Name();
 
