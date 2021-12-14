@@ -396,11 +396,9 @@ namespace IONET.MayaAnim
             anim.header.startTime = 0;
             anim.header.endTime = animation.GetFrameCount();
 
-            bool is2015 = false;
-
             // get bone order
             List<IOBone> BonesInOrder = getBoneTreeOrder(skeleton);
-            if (is2015)
+            if (settings.MayaAnim2015)
                 BonesInOrder = BonesInOrder.OrderBy(f => f.Name, StringComparer.Ordinal).ToList();
 
             foreach (IOBone b in BonesInOrder)
