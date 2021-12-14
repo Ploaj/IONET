@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace IONET
+namespace IONET.Core.Animation
 {
     public class IOKeyFrame
     {
@@ -24,29 +24,39 @@ namespace IONET
         public object Value { get; set; }
     }
 
-
-    public class IOKeyFrameCubic : IOKeyFrame
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        public float TangentInput { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public float TangentOutput { get; set; }
-    }
-
     public class IOKeyFrameHermite : IOKeyFrame
     {
         /// <summary>
         /// 
         /// </summary>
-        public float TangentInput { get; set; }
+        public float TangentSlopeInput { get; set; }
         /// <summary>
         /// 
         /// </summary>
-        public float TangentOutput { get; set; }
+        public float TangentSlopeOutput { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public float TangentWeightInput { get; set; } = 1.0f;
+        /// <summary>
+        /// 
+        /// </summary>
+        public float TangentWeightOutput { get; set; } = 1.0f;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool IsWeighted => (TangentWeightInput != 1.0f || TangentWeightOutput != 1.0f);
+
+        public static IOKeyFrameHermite FromBezier(IOKeyFrameBezier bezier)
+        {
+            return new IOKeyFrameHermite()
+            {
+                Frame = bezier.Frame,
+                Value = bezier.Value,
+            };
+        }
     }
 
     public class IOKeyFrameBezier : IOKeyFrame

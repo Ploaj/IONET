@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text.RegularExpressions;
+using IONET.Core.Animation;
 
 namespace IONET.Fbx
 {
@@ -228,7 +229,11 @@ namespace IONET.Fbx
                 //4 attributes. 
                 float rightSlope = keyAttributes[4 * i + 0];
                 float nextLeftSlope = keyAttributes[4 * i + 1];
-                float tangentData = keyAttributes[4 * i + 2];
+                //Tangent data is encoded as an int. Convert float to int.
+                int tangentWeightData = BitConverter.ToInt32(BitConverter.GetBytes(keyAttributes[4 * i + 2]), 0);
+                //Decode the weights.
+                float weight1 = (tangentWeightData & 0x0000ffff) / 9999.0f;
+                float weight2 = ((tangentWeightData >> 16) & 0xffff) / 9999.0f;
 
                 int flags = keyAttributeFlags[i];
                 var attrCount = keyAttributeRefs[i];
@@ -245,11 +250,15 @@ namespace IONET.Fbx
                     switch (interpolation)
                     {
                         case EInterpolationType.eInterpolationCubic: //Todo figure out tangents from attribute data
-                            track.KeyFrames.Add(new IOKeyFrameCubic()
+                            track.KeyFrames.Add(new IOKeyFrameHermite()
                             {
                                 Frame = frame,
                                 Time = time,
                                 Value = value,
+                                TangentSlopeInput = rightSlope,
+                                TangentSlopeOutput = nextLeftSlope,
+                                TangentWeightInput = weight1,
+                                TangentWeightOutput = weight2,
                             });
                             break;
                         default:

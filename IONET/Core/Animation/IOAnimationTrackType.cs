@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace IONET
+namespace IONET.Core.Animation
 {
     public enum IOAnimationTrackType
     {
@@ -22,5 +22,6 @@ namespace IONET
         ScaleY,
         ScaleZ,
         TransformMatrix4x4,
+        NodeVisibility,
     }
 }

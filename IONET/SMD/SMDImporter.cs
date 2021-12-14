@@ -10,7 +10,7 @@ namespace IONET.SMD
     /// <summary>
     /// 
     /// </summary>
-    public class SMDImporter : IModelLoader
+    public class SMDImporter : ISceneLoader
     {
         /// <summary>
         /// 

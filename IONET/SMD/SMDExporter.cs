@@ -6,7 +6,7 @@ using System.Numerics;
 
 namespace IONET.SMD
 {
-    public class SMDExporter : IModelExporter
+    public class SMDExporter : ISceneExporter
     {
         /// <summary>
         /// 

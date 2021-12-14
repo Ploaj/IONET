@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 
 namespace IONET.Wavefront
 {
-    public class OBJImporter : IModelLoader
+    public class OBJImporter : ISceneLoader
     {
         /// <summary>
         /// 

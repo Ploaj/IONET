@@ -22,7 +22,7 @@ using System.Xml;
 
 namespace IONET.Collada
 {
-    public class ColladaExporter : IModelExporter
+    public class ColladaExporter : ISceneExporter
     {
         private ExportSettings _settings;
         private IONET.Collada.Collada _collada;
