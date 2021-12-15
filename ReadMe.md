@@ -8,13 +8,13 @@ Currently Supported Import Formats:
 * Wavefront (*.obj)
 * StudioMDL (*.smd)
 * FBX (*.fbx) (ver 7.4 and 6.1)
-
+* MayaAnim (*.anim)
 
 Currently Supported Export Formats:
 * Collada (*.dae)
 * Wavefront (*.obj)
 * StudioMDL (*.smd)
-
+* MayaAnim (*.anim)
 
 Dependencies:
 * NET Standard 2.0
