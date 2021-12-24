@@ -101,7 +101,7 @@ namespace IONET
         /// 
         /// </summary>
         [Category("Anim"), DisplayName("Maya 2015 (.anim)"), Description("Helps with Maya 2015 compatibility (ANIM ONLY)")]
-        public bool MayaAnim2015 { get; set; } = true;
+        public bool MayaAnim2015 { get; set; } = false;
 
         /// <summary>
         /// 
