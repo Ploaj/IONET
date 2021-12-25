@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 using System.Text.RegularExpressions;
+using System.Globalization;
 
 namespace IONET.Wavefront
 {
@@ -49,9 +50,17 @@ namespace IONET.Wavefront
                 var matNam = "";
                 Dictionary<IOPrimitive, List<int[]>> polygons = new Dictionary<IOPrimitive, List<int[]>>();
 
+                var enusculture = new CultureInfo("en-US");
+                var prevCultureInfo = CultureInfo.CurrentCulture;
+
+                CultureInfo.CurrentCulture = enusculture;
+
                 while (!r.EndOfStream)
                 {
-                    var args = Regex.Replace(r.ReadLine().Trim(), @"\s+", " ").Split(' ');
+                    string line = r.ReadLine();
+                    line = line.Replace(",", ".");
+
+                    var args = Regex.Replace(line.Trim(), @"\s+", " ").Split(' ');
                     
                     if (args.Length > 0)
                         switch (args[0])
@@ -120,10 +129,14 @@ namespace IONET.Wavefront
                                 polygons = new Dictionary<IOPrimitive, List<int[]>>();
                                 break;
                             case "usemtl":
-                                matNam = args[1];
+                                if (args.Length > 1)
+                                    matNam = args[1];
                                 break;
                         }
                 }
+
+                //Reset back
+                CultureInfo.CurrentCulture = prevCultureInfo;
 
                 objects.Add(new Tuple<string, string, Dictionary<IOPrimitive, List<int[]>>>(objName, matNam, polygons));
 
@@ -157,10 +170,14 @@ namespace IONET.Wavefront
                         {
                             var face = p.Value[i];
 
+                            //Attribute face index is based on the order they are written in
+                            //Normal index shifts by 1 if using tex coords
+                            int normalIndex = vt.Count > 0 ? 2 : 1; 
+
                             IOVertex vert = new IOVertex()
                             {
                                 Position = face[0] != -1 ? v[face[0]] : Vector3.Zero,
-                                Normal = face[2] != -1 ? vn[face[2]] : Vector3.Zero,
+                                Normal = face[normalIndex] != -1 ? vn[face[normalIndex]] : Vector3.Zero,
                             };
                             if(face[1] != -1)
                                 vert.UVs.Add(vt[face[1]]);
@@ -190,7 +207,7 @@ namespace IONET.Wavefront
             List<int[]> faces = new List<int[]>();
             for(int i = 1; i < args.Length; i++)
             {
-                var f = args[i].Split('/');
+                var f = args[i].Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
 
                 int[] face = new int[3];
                 for(int j = 0; j < 3; j++)
@@ -217,9 +234,16 @@ namespace IONET.Wavefront
             {
                 IOMaterial currentMaterial = new IOMaterial();
 
+                var enusculture = new CultureInfo("en-US");
+                var prevCultureInfo = CultureInfo.CurrentCulture;
+                CultureInfo.CurrentCulture = enusculture;
+
                 while (!r.EndOfStream)
                 {
-                    var args = Regex.Replace(r.ReadLine().Trim(), @"\s+", " ").Split(' ');
+                    string line = r.ReadLine();
+                    line = line.Replace(",", ".");
+
+                    var args = Regex.Replace(line.Trim(), @"\s+", " ").Split(' ');
 
                     if (args.Length == 0)
                         continue;
@@ -274,6 +298,9 @@ namespace IONET.Wavefront
                             break;
                     }
                 }
+
+                //Reset back
+                CultureInfo.CurrentCulture = prevCultureInfo;
             }
         }
 
