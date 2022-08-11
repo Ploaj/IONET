@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
 using System.Text;
 
 namespace IONET.Core.Skeleton
@@ -71,6 +73,22 @@ namespace IONET.Core.Skeleton
         public int IndexOf(IOBone bone)
         {
             return BreathFirstOrder().IndexOf(bone);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="transform"></param>
+        public void ApplyTransform(Matrix4x4 transform)
+        {
+            var bones = BreathFirstOrder();
+
+            for(int i = 0; i < bones.Count; i++)
+            {
+                bones[i].Translation = Vector3.Transform(bones[i].Translation, transform);
+                bones[i].RotationEuler = Vector3.TransformNormal(bones[i].RotationEuler, transform);
+                //bones[i].Scale = Vector3.TransformNormal(bones[i].Scale, transform);
+            }
         }
     }
 }

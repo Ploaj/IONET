@@ -143,9 +143,12 @@ namespace IONET.Core.Model
             }
 
             // remap polygon indices
-            foreach(var p in Polygons)
-                for(int i = 0; i < p.Indicies.Count; i++)
-                    p.Indicies[i] = remapIndex[p.Indicies[i]];
+            foreach (var p in Polygons)
+                for (int i = 0; i < p.Indicies.Count; i++)
+                    if (remapIndex.ContainsKey(p.Indicies[i]))
+                        p.Indicies[i] = remapIndex[p.Indicies[i]];
+                    else
+                        p.Indicies[i] = 0;
 
             System.Diagnostics.Debug.WriteLine("Optimized: " + Vertices.Count + " -> " + newVertices.Count);
 

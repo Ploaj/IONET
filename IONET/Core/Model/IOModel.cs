@@ -26,6 +26,22 @@ namespace IONET.Core.Model
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="transform"></param>
+        public void Transform(Matrix4x4 transform)
+        {
+            Skeleton.ApplyTransform(transform);
+
+            foreach (var mesh in Meshes)
+                foreach (var v in mesh.Vertices)
+                {
+                    // todo apply bind matrix before disabling
+                    v.Envelope.UseBindMatrix = false;
+                }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public void SmoothNormals()
         {
             List<Vector3> allpositions = new List<Vector3>();

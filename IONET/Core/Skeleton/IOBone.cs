@@ -4,6 +4,12 @@ using System.Numerics;
 
 namespace IONET.Core.Skeleton
 {
+    public enum BoneType
+    {
+        JOINT,
+        NODE
+    }
+
     /// <summary>
     /// 
     /// </summary>
@@ -15,6 +21,8 @@ namespace IONET.Core.Skeleton
         public string Name { get; set; } = "Bone";
 
         public string AltID { get; set; } = "";
+
+        public BoneType Type = BoneType.JOINT;
 
         /// <summary>
         /// This Node's Parent Node

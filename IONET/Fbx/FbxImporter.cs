@@ -26,12 +26,17 @@ namespace IONET.Fbx
             IOScene scene = new IOScene();
 
             IOModel model = new IOModel();
-            model.Skeleton = helper.GetSkeleton();
             scene.Models.Add(model);
 
+            System.Diagnostics.Debug.WriteLine("Extracting Skeleton");
+            model.Skeleton = helper.GetSkeleton();
+
+            System.Diagnostics.Debug.WriteLine("Extracting Mesh");
             model.Meshes.AddRange(helper.ExtractMesh());
-            
+
+            System.Diagnostics.Debug.WriteLine("Extracting Materials");
             scene.Materials.AddRange(helper.GetMaterials());
+
 
             return scene;
         }

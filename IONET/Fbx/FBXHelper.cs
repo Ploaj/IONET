@@ -226,7 +226,9 @@ namespace IONET.Fbx
         {
             // gather mesh objects
             var mesh = _document.GetNodesByName("Model").Where(e => e.Properties.Count >= NodeDescSize && e.Properties[NodeDescSize - 1].ToString() == "Mesh");
-            
+
+            var geometries = _document.GetNodesByName("Geometry");
+
             List<IOMesh> meshes = new List<IOMesh>();
 
             var subdeformers = _document.GetNodesByName("SubDeformer");
@@ -253,7 +255,7 @@ namespace IONET.Fbx
                 // in older fbx this was stored in the mesh node
                 // in newer versions it's in its own node
 
-                var geoms = _document.GetNodesByName("Geometry").Where(e => IsParentedTo(e.Properties[0].ToString(), m.Properties[0].ToString())).ToArray();
+                var geoms = geometries.Where(e => IsParentedTo(e.Properties[0].ToString(), m.Properties[0].ToString())).ToArray();
 
                 if(geoms.Length > 0)
                 {
@@ -440,6 +442,9 @@ namespace IONET.Fbx
                 {
                     if (map.ContainsKey(idx1))
                     {
+                        if (map[idx1].Item2 == "untitled")
+                            continue;
+
                         v.Envelope.Weights.Add(new Core.IOBoneWeight()
                         {
                             Weight = map[idx1].Item1,

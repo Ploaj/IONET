@@ -31,7 +31,8 @@ namespace IONET
         {
             new ColladaExporter(),
             new SMDExporter(),
-            new OBJExporter()
+            new OBJExporter(),
+            new MIO.MIOExporter()
         };
 
         /// <summary>

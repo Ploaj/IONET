@@ -80,11 +80,16 @@ namespace IONET.Collada
                                 skelIDs.Add(j);
                 }
 
+                GlobalBoneTransform = Matrix4x4.Identity;
+
                 // load nodes
                 foreach (var v in colscene.Node)
                 {
-                    LoadNodes(v, null, model, skelIDs);
+                    LoadNodes(v, null, null, model, skelIDs);
                 }
+
+                if (GlobalBoneTransform != Matrix4x4.Identity)
+                    model.Transform(GlobalBoneTransform);
 
                 // add model
                 scene.Models.Add(model);
@@ -134,20 +139,28 @@ namespace IONET.Collada
 
             return jointIDs.Count > 0;
         }
+
+        private Matrix4x4 GlobalBoneTransform = Matrix4x4.Identity;
         
+
         /// <summary>
         /// 
         /// </summary>
         /// <param name="n"></param>
         /// <param name="bones"></param>
-        private IOBone LoadNodes(Node n, IOBone parent, IOModel model, List<string> skeletonIds)
+        private IOBone LoadNodes(Node n, Node nodeParent, IOBone parent, IOModel model, List<string> skeletonIds)
         {
             // create bone to represent node
             IOBone bone = new IOBone()
             {
                 Name = n.Name,
-                AltID = n.sID
+                AltID = n.sID,
+                Type = n.Type == Node_Type.NODE ? BoneType.NODE : BoneType.JOINT
             };
+
+            // add this node to parent
+            if (parent != null)
+                parent.AddChild(bone);
 
             // load matrix
             if (n.Matrix != null && n.Matrix.Length >= 0)
@@ -202,14 +215,23 @@ namespace IONET.Collada
             }
 
 
-            // add this node to parent
-            if (parent != null)
-                parent.AddChild(bone);
+            // detect skeleton
+            if (IsSkeletonRoot(model, n, bone, skeletonIds) ||
+                (parent == null &&
+                n.node != null &&
+                n.node.Length > 0))
+            {
+                if (parent != null)
+                    GlobalBoneTransform = parent.WorldTransform;
+                bone.Parent = null;
+                model.Skeleton.RootBones.Add(bone);
+            }
+
 
             // load children
             if (n.node != null)
                 foreach (var v in n.node)
-                    LoadNodes(v, bone, model, skeletonIds);
+                    LoadNodes(v, n, bone.Name.Equals("Armature") ? null : bone, model, skeletonIds);
 
 
             // load instanced geometry
@@ -236,23 +258,49 @@ namespace IONET.Collada
                 }
             }
 
-            // detect skeleton
-            if ((!string.IsNullOrEmpty(bone.Name) && skeletonIds.Contains(bone.Name)) ||
-                (n.Type == Node_Type.JOINT && parent == null) ||
-                (n.Instance_Camera == null && 
-                n.Instance_Controller == null &&
-                n.Instance_Geometry == null &&
-                n.Instance_Light == null && 
-                n.Instance_Node == null && 
-                parent == null && 
-                n.node != null && 
-                n.node.Length > 0))
-            {
-                model.Skeleton.RootBones.Add(bone);
-            }
 
             // complete
             return bone;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        private bool IsSkeletonRoot(IOModel m, Node n, IOBone bone, List<string> skeletonIds)
+        {
+            //check none of parents are joints
+            var parent = bone.Parent;
+            while (parent != null)
+            {
+                if (m.Skeleton.RootBones.Contains(parent))
+                    return false;
+
+                parent = parent.Parent;
+            }
+
+            //// check if any descendents have a joint node
+
+            bool hasDescendent = false;
+
+            Queue<Node> nodes = new Queue<Node>();
+            nodes.Enqueue(n);
+            while(nodes.Count > 0)
+            {
+                var node = nodes.Dequeue();
+                if(node.Type == Node_Type.JOINT || skeletonIds.Contains(node.Name))
+                {
+                    hasDescendent = true;
+                    break;
+                }
+
+                if (node.node != null)
+                    foreach (var c in node.node)
+                        nodes.Enqueue(c);
+            }
+
+            // if both true then this is a skeleton root
+            return hasDescendent;
         }
 
         /// <summary>
@@ -335,7 +383,10 @@ namespace IONET.Collada
             }
 
             // load geometry
-            var geom = string.IsNullOrEmpty(con.Skin.sourceid) ? LoadGeometryFromID(n, con.Skin.sID, envelopes) : LoadGeometryFromID(n, con.Skin.sourceid, envelopes);
+            var geom = string.IsNullOrEmpty(
+                con.Skin.sourceid) ? 
+                LoadGeometryFromID(n, con.Skin.sID, envelopes) : 
+                LoadGeometryFromID(n, con.Skin.sourceid, envelopes);
 
 
             // bind shape
@@ -464,7 +515,7 @@ namespace IONET.Collada
                             });
                         }
 
-                        // make the bind matrix as being used
+                        // mark the bind matrix as being used
                         vertex.Envelope.UseBindMatrix = true;
                     }
                     break;
