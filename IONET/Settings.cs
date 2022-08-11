@@ -97,5 +97,16 @@ namespace IONET
         [Category("Misc"), DisplayName("Blender Mode"), Description("Helps with blender compatibility (DAE ONLY)")]
         public bool BlenderMode { get; set; } = true;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        [Category("Anim"), DisplayName("Maya 2015 (.anim)"), Description("Helps with Maya 2015 compatibility (ANIM ONLY)")]
+        public bool MayaAnim2015 { get; set; } = false;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Category("Anim"), DisplayName("Use Radians (.anim)"), Description("Determines to use radians for maya animations. (ANIM ONLY)")]
+        public bool MayaAnimUseRadians { get; set; } = true;
     }
 }

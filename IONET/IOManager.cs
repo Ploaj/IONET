@@ -3,6 +3,7 @@ using IONET.Core;
 using IONET.Fbx;
 using IONET.SMD;
 using IONET.Wavefront;
+using IONET.MayaAnim;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -14,25 +15,27 @@ namespace IONET
         /// <summary>
         /// 
         /// </summary>
-        private static IModelLoader[] ModelLoaders = new
-            IModelLoader[]
+        private static ISceneLoader[] SceneLoaders = new
+            ISceneLoader[]
         {
             new ColladaImporter(),
             new SMDImporter(),
             new OBJImporter(),
-            new FbxImporter()
+            new FbxImporter(),
+            new MayaAnimImporter(),
         };
 
         /// <summary>
         /// 
         /// </summary>
-        private static IModelExporter[] ModelExporters = new
-            IModelExporter[]
+        private static ISceneExporter[] SceneExporters = new
+            ISceneExporter[]
         {
             new ColladaExporter(),
             new SMDExporter(),
             new OBJExporter(),
-            new MIO.MIOExporter()
+            new MIO.MIOExporter(),
+            new MayaAnimExporter(),
         };
 
         /// <summary>
@@ -43,11 +46,11 @@ namespace IONET
         {
             StringBuilder sb = new StringBuilder();
 
-            var allExt = string.Join(";*", ModelExporters.SelectMany(e => e.GetExtensions()));
+            var allExt = string.Join(";*", SceneExporters.SelectMany(e => e.GetExtensions()));
 
             sb.Append($"Supported Files (*{allExt})|*{allExt}");
 
-            foreach(var l in ModelExporters)
+            foreach(var l in SceneExporters)
             {
                 var ext = string.Join(";*", l.GetExtensions());
                 sb.Append($"|{l.Name()} (*{ext})|*{ext}");
@@ -66,11 +69,11 @@ namespace IONET
         {
             StringBuilder sb = new StringBuilder();
 
-            var allExt = string.Join(";*", ModelLoaders.SelectMany(e => e.GetExtensions()));
+            var allExt = string.Join(";*", SceneLoaders.SelectMany(e => e.GetExtensions()));
 
             sb.Append($"Supported Files (*{allExt})|*{allExt}");
 
-            foreach (var l in ModelLoaders)
+            foreach (var l in SceneLoaders)
             {
                 var ext = string.Join(";*", l.GetExtensions());
                 sb.Append($"|{l.Name()} (*{ext})|*{ext}");
@@ -88,7 +91,7 @@ namespace IONET
         /// <returns></returns>
         public static IOScene LoadScene(string filePath, ImportSettings settings)
         {
-            foreach(var l in ModelLoaders)
+            foreach(var l in SceneLoaders)
                 if (l.Verify(filePath))
                 {
                     var scene = l.GetScene(filePath);
@@ -172,7 +175,7 @@ namespace IONET
             if (settings == null)
                 settings = new ExportSettings();
 
-            foreach (var l in ModelExporters)
+            foreach (var l in SceneExporters)
                 foreach (var e in l.GetExtensions())
                     if (e.Equals(ext))
                     {

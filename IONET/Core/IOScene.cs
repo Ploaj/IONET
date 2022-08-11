@@ -1,4 +1,5 @@
 ﻿using IONET.Core.Model;
+using IONET.Core.Animation;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -20,6 +21,11 @@ namespace IONET.Core
         /// 
         /// </summary>
         public List<IOMaterial> Materials { get; internal set; } = new List<IOMaterial>();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public List<IOAnimation> Animations { get; internal set; } = new List<IOAnimation>();
 
         /// <summary>
         /// Cleans material names to allow for smoother export

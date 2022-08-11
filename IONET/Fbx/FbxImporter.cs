@@ -5,7 +5,7 @@ using System.IO;
 
 namespace IONET.Fbx
 {
-    public class FbxImporter : IModelLoader
+    public class FbxImporter : ISceneLoader
     {
         /// <summary>
         /// 
