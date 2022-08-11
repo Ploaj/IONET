@@ -3,7 +3,7 @@ using System.IO;
 
 namespace IONET.MIO
 {
-    public class MIOExporter : IModelExporter
+    public class MIOExporter : ISceneExporter
     {
         public void ExportScene(IOScene scene, string filePath, ExportSettings settings)
         {
